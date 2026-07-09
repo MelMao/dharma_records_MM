@@ -21,3 +21,7 @@
 ## 本地预览
 
 直接打开 `index.html` 即可预览。部分 PWA 离线缓存功能需要通过网页服务器访问才会启用。
+
+
+## Icon cache fix
+This build includes root-level `apple-touch-icon.png`, `om-apple-touch-icon.png`, `favicon-192.png`, and `icon.png` for iOS home screen icon detection.
