@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#8b5a2b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="受法记录" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>灌顶与日课记录</title>
+  <style>
+    :root {
+      --bg: #fbf7ef;
+      --panel: #fffaf2;
+      --panel-2: #fff3df;
+      --text: #2e2419;
+      --muted: #7a6b5a;
+      --line: #ead9c5;
+      --brand: #8b5a2b;
+      --brand-2: #c68b42;
+      --danger: #b9473f;
+      --ok: #537a42;
+      --shadow: 0 12px 30px rgba(64, 42, 22, .12);
+      --radius: 20px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; }
+    body { padding-bottom: calc(76px + var(--safe-bottom)); }
+    button, input, select, textarea { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+    a { color: var(--brand); }
+
+    .app { max-width: 720px; margin: 0 auto; min-height: 100vh; }
+    .topbar { position: sticky; top: 0; z-index: 10; background: rgba(251,247,239,.9); backdrop-filter: blur(18px); border-bottom: 1px solid rgba(234,217,197,.75); padding: 14px 16px 10px; }
+    .toprow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    h1 { font-size: 20px; margin: 0; letter-spacing: .02em; }
+    .subtitle { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .page { display: none; padding: 14px 14px 24px; }
+    .page.active { display: block; }
+
+    .bottom-nav { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 20; width: 100%; max-width: 720px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; padding: 8px 8px calc(8px + var(--safe-bottom)); background: rgba(255,250,242,.96); border-top: 1px solid var(--line); backdrop-filter: blur(18px); }
+    .nav-btn { border: 0; background: transparent; color: var(--muted); padding: 7px 2px; border-radius: 14px; display: grid; gap: 3px; place-items: center; font-size: 11px; }
+    .nav-btn .ico { font-size: 20px; line-height: 1; }
+    .nav-btn.active { background: var(--panel-2); color: var(--brand); font-weight: 700; }
+
+    .card { background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: var(--radius); padding: 14px; margin: 10px 0; }
+    .soft { background: rgba(255,250,242,.75); border: 1px solid var(--line); border-radius: 16px; padding: 12px; }
+    .row { display: flex; gap: 10px; align-items: center; }
+    .row.wrap { flex-wrap: wrap; }
+    .between { justify-content: space-between; }
+    .grow { flex: 1; }
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; }
+    .tiny { font-size: 11px; }
+    .section-title { font-size: 15px; font-weight: 800; margin: 18px 2px 8px; }
+    .pill { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 8px; background: #fff; font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; background: var(--brand-2); }
+    .btn { border: 1px solid var(--line); background: #fff; color: var(--text); border-radius: 13px; padding: 9px 12px; min-height: 40px; cursor: pointer; }
+    .btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .btn.ghost { background: transparent; }
+    .btn.danger { background: #fff; border-color: rgba(185,71,63,.35); color: var(--danger); }
+    .btn.smallbtn { padding: 6px 9px; min-height: 32px; border-radius: 11px; font-size: 12px; }
+    .icon-btn { width: 40px; height: 40px; border-radius: 14px; border: 1px solid var(--line); background: #fff; display: grid; place-items: center; }
+    .fab { position: fixed; right: calc(18px + max(0px, (100vw - 720px)/2)); bottom: calc(90px + var(--safe-bottom)); z-index: 18; width: 56px; height: 56px; border-radius: 22px; border: 0; background: var(--brand); color: white; box-shadow: 0 16px 35px rgba(96, 57, 21, .35); font-size: 28px; }
+
+    input, select, textarea { width: 100%; border: 1px solid var(--line); background: #fff; border-radius: 13px; padding: 10px 11px; color: var(--text); min-height: 42px; }
+    textarea { min-height: 100px; resize: vertical; line-height: 1.5; }
+    label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 5px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .chip { border: 1px solid var(--line); border-radius: 999px; background: #fff; padding: 7px 10px; font-size: 12px; color: var(--muted); }
+    .chip.selected { background: var(--brand); color: white; border-color: var(--brand); }
+    .hidden { display: none !important; }
+
+    .month-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 10px; }
+    .month-title { font-size: 18px; font-weight: 800; }
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .dow { text-align: center; font-size: 11px; color: var(--muted); padding: 3px 0; }
+    .day { min-height: 52px; border: 1px solid var(--line); background: rgba(255,255,255,.74); border-radius: 14px; padding: 6px 5px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 4px; }
+    .day.out { opacity: .32; }
+    .day.today { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(139,90,43,.12) inset; }
+    .day.selected { background: var(--panel-2); border-color: var(--brand-2); }
+    .day-num { font-size: 13px; font-weight: 700; }
+    .day-dots { min-height: 11px; display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; max-width: 42px; }
+    .day-count { font-size: 10px; color: var(--muted); }
+
+    .list-card { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); background: #fff; border-radius: 16px; padding: 12px; margin: 9px 0; }
+    .list-card .bar { width: 5px; align-self: stretch; border-radius: 999px; background: var(--brand-2); flex: 0 0 auto; }
+    .list-card h3 { margin: 0 0 4px; font-size: 15px; }
+    .meta { color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .empty { text-align: center; color: var(--muted); padding: 28px 12px; }
+
+    dialog { border: 0; padding: 0; border-radius: 24px; width: min(680px, calc(100vw - 18px)); max-height: min(92dvh, 920px); background: var(--panel); box-shadow: 0 35px 90px rgba(39,25,12,.35); overflow: hidden; }
+    dialog[open] { display: flex; flex-direction: column; }
+    dialog::backdrop { background: rgba(35, 24, 13, .42); backdrop-filter: blur(6px); }
+    #modalContent { width: 100%; max-height: min(92dvh, 920px); min-height: 0; display: flex; flex-direction: column; }
+    #modalContent > form { max-height: min(92dvh, 920px); min-height: 0; display: flex; flex-direction: column; }
+    .modal-head { position: sticky; top: 0; flex: 0 0 auto; background: var(--panel); border-bottom: 1px solid var(--line); padding: 13px 14px; display: flex; justify-content: space-between; align-items: center; z-index: 2; }
+    .modal-title { font-weight: 900; }
+    .modal-body { flex: 1 1 auto; min-height: 0; padding: 12px 14px calc(34px + var(--safe-bottom)); overflow-y: auto; overflow-x: hidden; max-height: calc(min(92dvh, 920px) - 122px); -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+    .modal-actions { flex: 0 0 auto; position: sticky; bottom: 0; background: var(--panel); border-top: 1px solid var(--line); padding: 12px 14px calc(12px + var(--safe-bottom)); display: flex; gap: 10px; justify-content: flex-end; z-index: 3; }
+
+    .rich-toolbar { display: flex; gap: 6px; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 14px 14px 0 0; background: #fff; padding: 7px; }
+    .rich-toolbar button, .rich-toolbar select { width: auto; min-height: 32px; padding: 5px 8px; border-radius: 10px; border: 1px solid var(--line); background: #fff; font-size: 12px; }
+    .rich-editor { min-height: 180px; padding: 12px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 14px 14px; background: #fff; line-height: 1.6; outline: none; overflow: auto; }
+    .rich-editor:empty:before { content: attr(data-placeholder); color: #b2a391; }
+    .rich-editor mark { background: #fff1a8; padding: 1px 2px; border-radius: 4px; }
+
+    .detail h2 { margin: 4px 0 8px; font-size: 20px; }
+    .kv { display: grid; grid-template-columns: 92px 1fr; gap: 7px 9px; font-size: 13px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+    .kv .k { color: var(--muted); }
+    .visual-html { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 12px; line-height: 1.65; overflow-wrap: break-word; }
+
+    .color-swatch { width: 24px; height: 24px; border-radius: 999px; border: 2px solid rgba(0,0,0,.08); display: inline-block; }
+    .progress { height: 8px; background: #ead9c5; border-radius: 999px; overflow: hidden; margin-top: 8px; }
+    .progress > div { height: 100%; background: var(--brand-2); width: 0%; }
+
+    @media (min-width: 560px) { .day { min-height: 62px; } .page { padding-left: 18px; padding-right: 18px; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="toprow">
+        <div>
+          <h1 id="pageTitle">灌顶与日课记录</h1>
+          <div class="subtitle" id="pageSubtitle">本地保存 · 请定期备份</div>
+        </div>
+        <button class="icon-btn" id="quickBackupBtn" title="导出备份">⤓</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="page-calendar" class="page active"></section>
+      <section id="page-records" class="page"></section>
+      <section id="page-daily" class="page"></section>
+      <section id="page-resources" class="page"></section>
+      <section id="page-settings" class="page"></section>
+    </main>
+
+    <button class="fab" id="fab" aria-label="新增">＋</button>
+
+    <nav class="bottom-nav" aria-label="主导航">
+      <button class="nav-btn active" data-tab="calendar"><span class="ico">月</span><span>日历</span></button>
+      <button class="nav-btn" data-tab="records"><span class="ico">册</span><span>记录</span></button>
+      <button class="nav-btn" data-tab="daily"><span class="ico">念</span><span>日课</span></button>
+      <button class="nav-btn" data-tab="resources"><span class="ico">卷</span><span>法本</span></button>
+      <button class="nav-btn" data-tab="settings"><span class="ico">设</span><span>设置</span></button>
+    </nav>
+  </div>
+
+  <dialog id="modal"><div id="modalContent"></div></dialog>
+  <input id="fileInput" type="file" class="hidden" />
+
+  <script>
+  (() => {
+    const STORE_KEY = 'dharmaRecordsApp.v2';
+    const todayStr = () => toDateStr(new Date());
+    const nowIso = () => new Date().toISOString();
+    const uid = (prefix='id') => `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+    const esc = (v='') => String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    const stripHtml = (html='') => {
+      const div = document.createElement('div'); div.innerHTML = html || ''; return div.textContent || div.innerText || '';
+    };
+    const norm = v => String(v ?? '').trim();
+    const asArray = v => Array.isArray(v) ? v : (v ? String(v).split(/[，,]/).map(s=>s.trim()).filter(Boolean) : []);
+    const fmtDate = d => d ? d.replaceAll('-', '/') : '';
+    const toDateStr = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const parseLocalDate = s => { const [y,m,d] = String(s||todayStr()).split('-').map(Number); return new Date(y, (m||1)-1, d||1); };
+    const addMonths = (date, n) => new Date(date.getFullYear(), date.getMonth()+n, 1);
+    const monthKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+
+    const defaultTypes = [
+      {name:'灌顶', color:'#d97745'}, {name:'口传', color:'#4f82c0'}, {name:'开示', color:'#5b8c5a'},
+      {name:'法会', color:'#8b6fc6'}, {name:'共修', color:'#d39b34'}, {name:'其他', color:'#8c8c8c'}
+    ];
+    const defaultSettings = {
+      defaultLocation: '', defaultLineage: '宁玛', defaultStatus: '', defaultPrivacy: '私密',
+      defaultDailyCount: 108, defaultDailyPracticeStatus: '进行中', calendarWeekStart: '周一', language: '中文', theme: 'default', lastBackupAt: ''
+    };
+    const defaultState = () => ({
+      records: [
+        { id: uid('rec'), date:'2026-05-23', time:'', type:'灌顶', customType:'', status:'已参加', practiceName:'作明佛母', teacher:'岗顶法王', location:'墨尔本', lineage:'贝玛林巴', customLineage:'', categories:['怀业','度母','本尊'], customCategories:[], visualizationNotesHtml:'<h3>灌顶观想内容</h3><p>上师与佛母无二；大日如来七支坐；度母头、喉、心三处放光，三十二眷属融入。可继续补充四灌、甘露、脉轮、中脉等细节。</p>', visualizationNotesPlainText:'灌顶观想内容 上师与佛母无二；大日如来七支坐；度母头、喉、心三处放光，三十二眷属融入。可继续补充四灌、甘露、脉轮、中脉等细节。', notes:'示例记录，可删除或编辑。', organizer:'', registrationLink:'', textLink:'', hasText:'', privacy:'私密', createdAt:nowIso(), updatedAt:nowIso() },
+        { id: uid('rec'), date:'2026-07-11', time:'下午', type:'口传', customType:'', status:'计划参加', practiceName:'唐东嘉波长寿法', teacher:'南开宁波仁波切', location:'堪培拉', lineage:'宁玛', customLineage:'', categories:['长寿'], customCategories:[], visualizationNotesHtml:'', visualizationNotesPlainText:'', notes:'未来活动示例。', organizer:'', registrationLink:'', textLink:'', hasText:'', privacy:'私密', createdAt:nowIso(), updatedAt:nowIso() }
+      ],
+      dailyItems: [
+        { id:'daily_tara', parentId:'', name:'绿度母心咒', type:'心咒', customType:'', mantraText:'嗡 达咧 都达咧 都咧 梭哈', deityOrPractice:'绿度母', teacher:'', lineage:'宁玛', customLineage:'', defaultCount:108, targetCount:100000, manualBaseCount:0, startDate:'', completedDate:'', status:'进行中', isDaily:true, notes:'', sortOrder:1, createdAt:nowIso(), updatedAt:nowIso() },
+        { id:'daily_chenrezig', parentId:'', name:'观音心咒', type:'心咒', customType:'', mantraText:'嗡 玛尼 贝美 吽', deityOrPractice:'观音', teacher:'', lineage:'', customLineage:'', defaultCount:108, targetCount:100000, manualBaseCount:100000, startDate:'', completedDate:'2026-06-10', status:'已完成', isDaily:true, notes:'已完成十万遍示例。', sortOrder:2, createdAt:nowIso(), updatedAt:nowIso() },
+        { id:'daily_ngondro', parentId:'', name:'北伏藏加行', type:'加行', customType:'', mantraText:'', deityOrPractice:'北伏藏加行', teacher:'', lineage:'宁玛', customLineage:'', defaultCount:108, targetCount:0, manualBaseCount:0, startDate:'', completedDate:'', status:'进行中', isDaily:true, notes:'组合日课示例。', sortOrder:3, createdAt:nowIso(), updatedAt:nowIso() },
+        { id:'daily_ngondro_refuge', parentId:'daily_ngondro', name:'皈依发心', type:'加行', customType:'', mantraText:'', deityOrPractice:'北伏藏加行', teacher:'', lineage:'宁玛', customLineage:'', defaultCount:108, targetCount:100000, manualBaseCount:0, startDate:'', completedDate:'', status:'进行中', isDaily:true, notes:'', sortOrder:1, createdAt:nowIso(), updatedAt:nowIso() },
+        { id:'daily_ngondro_vajra', parentId:'daily_ngondro', name:'金刚萨埵百字明', type:'加行', customType:'', mantraText:'', deityOrPractice:'北伏藏加行', teacher:'', lineage:'宁玛', customLineage:'', defaultCount:21, targetCount:100000, manualBaseCount:0, startDate:'', completedDate:'', status:'进行中', isDaily:true, notes:'', sortOrder:2, createdAt:nowIso(), updatedAt:nowIso() }
+      ],
+      dailyCounts: [
+        { id: uid('cnt'), practiceItemId:'daily_tara', date:todayStr(), count:108, notes:'示例', createdAt:nowIso(), updatedAt:nowIso() }
+      ],
+      resources: [
+        { id: uid('res'), title:'山净烟供官方资源', type:'官网', customType:'', url:'', relatedPracticeName:'山净烟供', relatedRecordId:'', relatedDailyPracticeId:'', requiresTransmission:'不确定', privacy:'公开', notes:'示例：可放 Yeshe Khorlo 官方链接或 YouTube 链接。', createdAt:nowIso(), updatedAt:nowIso() }
+      ],
+      typeSettings: defaultTypes.map((t,i)=>({ id: uid('typ'), name:t.name, color:t.color, isDefault:true, isHidden:false, sortOrder:i+1, createdAt:nowIso(), updatedAt:nowIso() })),
+      settings: {...defaultSettings}
+    });
+
+    let state = loadState();
+    let currentTab = 'calendar';
+    let currentMonth = parseLocalDate(todayStr());
+    let selectedDate = todayStr();
+    let selectedDailyId = null;
+    let dailyMonth = parseLocalDate(todayStr());
+
+    function loadState(){
+      try {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (!raw) return defaultState();
+        const s = JSON.parse(raw);
+        return migrate(s);
+      } catch(e) { console.warn(e); return defaultState(); }
+    }
+    function migrate(s){
+      const base = defaultState();
+      const merged = { ...base, ...s };
+      merged.records = (merged.records || []).map(r => ({
+        ...r,
+        categories: asArray(r.categories), customCategories: asArray(r.customCategories),
+        visualizationNotesHtml: r.visualizationNotesHtml || r.visualizationNotes || '',
+        visualizationNotesPlainText: r.visualizationNotesPlainText || stripHtml(r.visualizationNotesHtml || r.visualizationNotes || ''),
+        privacy: r.privacy || merged.settings?.defaultPrivacy || '私密'
+      }));
+      merged.dailyItems = merged.dailyItems || [];
+      merged.dailyCounts = merged.dailyCounts || [];
+      merged.resources = merged.resources || [];
+      merged.typeSettings = merged.typeSettings?.length ? merged.typeSettings : base.typeSettings;
+      merged.settings = { ...defaultSettings, ...(merged.settings || {}) };
+      return merged;
+    }
+    function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+    function render(){
+      $$('.page').forEach(p => p.classList.remove('active'));
+      $(`#page-${currentTab}`).classList.add('active');
+      $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
+      const titles = {calendar:'灌顶与口传记录', records:'记录', daily:'日课', resources:'法本 / 链接', settings:'设置'};
+      $('#pageTitle').textContent = titles[currentTab];
+      $('#pageSubtitle').textContent = currentTab === 'calendar' ? '按日期查看受法与未来活动' : currentTab === 'daily' ? '按心咒 / 修法分组计数' : '本地保存 · 请定期备份';
+      $('#fab').style.display = currentTab === 'settings' ? 'none' : 'block';
+      if (currentTab === 'calendar') renderCalendarPage();
+      if (currentTab === 'records') renderRecordsPage();
+      if (currentTab === 'daily') renderDailyPage();
+      if (currentTab === 'resources') renderResourcesPage();
+      if (currentTab === 'settings') renderSettingsPage();
+    }
+
+    function typeName(r){ return r.customType || r.type || '其他'; }
+    function typeSetting(name){ return state.typeSettings.find(t => t.name === name) || state.typeSettings.find(t => t.name === '其他') || {color:'#8c8c8c'}; }
+    function recordColor(r){ return typeSetting(typeName(r)).color; }
+    function visibleTypeOptions(){ return state.typeSettings.filter(t=>!t.isHidden).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).map(t=>t.name); }
+    function getRecord(id){ return state.records.find(r=>r.id===id); }
+    function getDaily(id){ return state.dailyItems.find(i=>i.id===id); }
+    function getResource(id){ return state.resources.find(r=>r.id===id); }
+    function childrenOf(id){ return state.dailyItems.filter(i=>i.parentId===id).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)); }
+    function totalForDaily(id){ const item = getDaily(id); return Number(item?.manualBaseCount||0) + state.dailyCounts.filter(c=>c.practiceItemId===id).reduce((a,c)=>a+Number(c.count||0),0); }
+    function monthTotalForDaily(id, date=dailyMonth){ const mk = monthKey(date); return state.dailyCounts.filter(c=>c.practiceItemId===id && c.date?.startsWith(mk)).reduce((a,c)=>a+Number(c.count||0),0); }
+    function todayTotalForDaily(id){ return state.dailyCounts.filter(c=>c.practiceItemId===id && c.date===todayStr()).reduce((a,c)=>a+Number(c.count||0),0); }
+    function pct(item){ const t = Number(item.targetCount||0); if (!t) return 0; return Math.min(100, Math.round(totalForDaily(item.id)*100/t)); }
+
+    function renderCalendarPage(){
+      const root = $('#page-calendar');
+      const monthLabel = `${currentMonth.getFullYear()}年${currentMonth.getMonth()+1}月`;
+      root.innerHTML = `
+        <div class="month-head">
+          <button class="icon-btn" data-act="prevMonth">‹</button>
+          <div class="month-title">${monthLabel}</div>
+          <button class="icon-btn" data-act="nextMonth">›</button>
+        </div>
+        <div class="row between"><button class="btn smallbtn" data-act="today">今天</button><button class="btn smallbtn" data-act="openDateDetail" data-date="${selectedDate}">查看某日详情</button></div>
+        <div class="card"><div class="calendar" id="calendarGrid"></div></div>
+        <div id="selectedRecords"></div>
+      `;
+      renderCalendarGrid($('#calendarGrid'), currentMonth, selectedDate, date => state.records.filter(r=>r.date===date), (date)=>{ selectedDate=date; renderCalendarPage(); });
+      renderSelectedRecords();
+      root.onclick = (e) => {
+        const act = e.target.closest('[data-act]')?.dataset.act;
+        if (!act) return;
+        if (act==='prevMonth') { currentMonth = addMonths(currentMonth, -1); render(); }
+        if (act==='nextMonth') { currentMonth = addMonths(currentMonth, 1); render(); }
+        if (act==='today') { selectedDate=todayStr(); currentMonth=parseLocalDate(selectedDate); render(); }
+        if (act==='openDateDetail') showDateDetail(selectedDate);
+      };
+    }
+    function renderCalendarGrid(root, baseMonth, selected, getItems, onDayClick, opts={}){
+      const weekStartMonday = state.settings.calendarWeekStart !== '周日';
+      const dows = weekStartMonday ? ['一','二','三','四','五','六','日'] : ['日','一','二','三','四','五','六'];
+      root.innerHTML = dows.map(d=>`<div class="dow">${d}</div>`).join('');
+      const first = new Date(baseMonth.getFullYear(), baseMonth.getMonth(), 1);
+      const firstDow = first.getDay();
+      const offset = weekStartMonday ? (firstDow + 6) % 7 : firstDow;
+      const start = new Date(first); start.setDate(first.getDate() - offset);
+      for (let i=0;i<42;i++){
+        const d = new Date(start); d.setDate(start.getDate()+i);
+        const ds = toDateStr(d);
+        const items = getItems(ds) || [];
+        const dots = opts.daily ? (items.length ? `<span class="day-count">${items.reduce((a,x)=>a+Number(x.count||0),0)}</span>` : '') : items.slice(0,4).map(it=>`<span class="dot" style="background:${esc(recordColor(it))}"></span>`).join('');
+        const more = !opts.daily && items.length > 4 ? `<span class="tiny muted">+${items.length-4}</span>` : '';
+        const el = document.createElement('button');
+        el.type='button';
+        el.className = `day ${d.getMonth()!==baseMonth.getMonth()?'out':''} ${ds===todayStr()?'today':''} ${ds===selected?'selected':''}`;
+        el.innerHTML = `<span class="day-num">${d.getDate()}</span><span class="day-dots">${dots}${more}</span>`;
+        el.addEventListener('click', ()=>onDayClick(ds));
+        root.appendChild(el);
+      }
+    }
+    function renderSelectedRecords(){
+      const box = $('#selectedRecords');
+      const records = state.records.filter(r=>r.date===selectedDate).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+      box.innerHTML = `<div class="section-title">${fmtDate(selectedDate)}</div>` + (records.length ? records.map(recordCard).join('') : `<div class="card empty">暂无受法记录<br><button class="btn primary" data-act="addRecordDate" data-date="${selectedDate}">为这一天添加记录</button></div>`);
+      box.onclick = (e) => {
+        const card = e.target.closest('[data-record-id]');
+        if (card) showRecordDetail(card.dataset.recordId);
+        const add = e.target.closest('[data-act="addRecordDate"]');
+        if (add) openRecordForm({date:add.dataset.date});
+      };
+    }
+    function recordCard(r){
+      const cats = [...asArray(r.categories), ...asArray(r.customCategories)].filter(Boolean).join('、');
+      return `<div class="list-card" data-record-id="${esc(r.id)}">
+        <div class="bar" style="background:${esc(recordColor(r))}"></div>
+        <div class="grow">
+          <h3>${esc(r.practiceName || '未命名记录')}</h3>
+          <div class="meta">${esc(fmtDate(r.date))}${r.time ? ' ｜ '+esc(r.time) : ''} ｜ ${esc(typeName(r))}${r.status ? ' ｜ '+esc(r.status) : ''}</div>
+          <div class="meta">${r.teacher ? esc(r.teacher)+' ｜ ' : ''}${r.location ? esc(r.location) : ''}</div>
+          <div class="row wrap" style="margin-top:7px">${r.lineage || r.customLineage ? `<span class="pill">${esc(r.customLineage || r.lineage)}</span>` : ''}${cats ? `<span class="pill">${esc(cats)}</span>` : ''}${r.visualizationNotesPlainText ? `<span class="pill">有观想记录</span>` : ''}</div>
+        </div>
+      </div>`;
+    }
+
+    function showDateDetail(date){
+      const records = state.records.filter(r=>r.date===date);
+      openModal(`
+        <div class="modal-head"><div class="modal-title">${esc(fmtDate(date))}</div><button class="icon-btn" data-close>×</button></div>
+        <div class="modal-body">
+          <button class="btn primary" data-add-date="${esc(date)}">＋ 新增此日记录</button>
+          <div class="section-title">当日记录</div>
+          ${records.length ? records.map(recordCard).join('') : '<div class="empty">暂无记录</div>'}
+        </div>
+      `, (root)=>{
+        root.addEventListener('click', e=>{
+          if (e.target.closest('[data-close]')) closeModal();
+          const add=e.target.closest('[data-add-date]'); if(add) openRecordForm({date:add.dataset.addDate});
+          const card=e.target.closest('[data-record-id]'); if(card) showRecordDetail(card.dataset.recordId);
+        });
+      });
+    }
+
+    function showRecordDetail(id){
+      const r = getRecord(id); if(!r) return;
+      const cats = [...asArray(r.categories), ...asArray(r.customCategories)].filter(Boolean).join('、');
+      const linked = state.resources.filter(x=>x.relatedRecordId===id);
+      openModal(`
+        <div class="modal-head"><div class="modal-title">受法记录详情</div><button class="icon-btn" data-close>×</button></div>
+        <div class="modal-body detail">
+          <h2>${esc(r.practiceName)}</h2>
+          <div class="row wrap"><span class="pill"><span class="dot" style="background:${esc(recordColor(r))}"></span>${esc(typeName(r))}</span>${r.status?`<span class="pill">${esc(r.status)}</span>`:''}${r.privacy?`<span class="pill">${esc(r.privacy)}</span>`:''}</div>
+          <div class="card">
+            ${kv('日期', fmtDate(r.date))}${kv('时间', r.time)}${kv('上师', r.teacher)}${kv('地点', r.location)}${kv('传承', r.customLineage || r.lineage)}${kv('法类', cats)}${kv('主办方', r.organizer)}${kv('报名链接', r.registrationLink, true)}${kv('法本链接', r.textLink, true)}${kv('是否已领法本', r.hasText)}
+          </div>
+          ${r.visualizationNotesHtml ? `<div class="section-title">灌顶观想内容</div><div class="visual-html">${r.visualizationNotesHtml}</div>` : ''}
+          ${r.notes ? `<div class="section-title">备注</div><div class="soft">${esc(r.notes).replace(/\n/g,'<br>')}</div>` : ''}
+          <div class="section-title">相关法本 / 链接</div>
+          ${linked.length ? linked.map(resourceCard).join('') : '<div class="empty">暂无关联资料</div>'}
+          <div class="row wrap"><button class="btn primary" data-edit-record="${esc(id)}">编辑</button><button class="btn" data-copy-record="${esc(id)}">复制为新记录</button><button class="btn danger" data-delete-record="${esc(id)}">删除</button></div>
+        </div>
+      `, (root)=>{
+        root.addEventListener('click', e=>{
+          if(e.target.closest('[data-close]')) closeModal();
+          const edit=e.target.closest('[data-edit-record]'); if(edit) openRecordForm(getRecord(edit.dataset.editRecord));
+          const copy=e.target.closest('[data-copy-record]'); if(copy){ const old=getRecord(copy.dataset.copyRecord); const clone={...old, id:null, date:todayStr()}; openRecordForm(clone); }
+          const del=e.target.closest('[data-delete-record]'); if(del) deleteRecord(del.dataset.deleteRecord);
+          const res=e.target.closest('[data-resource-id]'); if(res) showResourceDetail(res.dataset.resourceId);
+        });
+      });
+    }
+    function kv(k,v,link=false){ if(!v) return ''; const val = link ? `<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>` : esc(v); return `<div class="kv"><div class="k">${esc(k)}</div><div>${val}</div></div>`; }
+    function deleteRecord(id){
+      const r=getRecord(id); if(!r) return;
+      if(!confirm(`确定删除「${r.practiceName}」吗？删除后只能通过备份恢复。`)) return;
+      state.records = state.records.filter(x=>x.id!==id);
+      state.resources = state.resources.map(x=>x.relatedRecordId===id?{...x, relatedRecordId:''}:x);
+      save(); closeModal(); render();
+    }
+
+    function openRecordForm(data={}){
+      const isEdit = !!data.id;
+      const r = { date: selectedDate || todayStr(), time:'', type: visibleTypeOptions()[0] || '灌顶', customType:'', status:state.settings.defaultStatus||'', practiceName:'', teacher:'', location:state.settings.defaultLocation||'', lineage:state.settings.defaultLineage||'', customLineage:'', categories:[], customCategories:[], visualizationNotesHtml:'', visualizationNotesPlainText:'', notes:'', organizer:'', registrationLink:'', textLink:'', hasText:'', privacy:state.settings.defaultPrivacy||'私密', ...data };
+      const typeOptions = visibleTypeOptions();
+      const lineages = ['宁玛','萨迦','噶举','格鲁','觉囊','贝玛林巴','不确定','其他'];
+      const cats = ['长寿','怀业','护法','本尊','前行','净土','大圆满','除障','财神','忏悔','度母','观音','文殊','莲师','其他'];
+      openModal(`
+        <form id="recordForm">
+          <div class="modal-head"><div class="modal-title">${isEdit?'编辑':'新增'}受法记录</div><button class="icon-btn" type="button" data-close>×</button></div>
+          <div class="modal-body">
+            <div class="section-title">基础信息</div>
+            <div class="grid2"><div><label>日期 *</label><input name="date" type="date" required value="${esc(r.date)}"></div><div><label>时间</label><input name="time" placeholder="上午 / 14:00" value="${esc(r.time)}"></div></div>
+            <label>类型 *</label><select name="type" required>${typeOptions.map(t=>`<option ${r.type===t?'selected':''}>${esc(t)}</option>`).join('')}<option ${!typeOptions.includes(r.type)?'selected':''}>其他</option></select>
+            <div id="customTypeBox"><label>自定义类型</label><input name="customType" value="${esc(r.customType || (!typeOptions.includes(r.type) ? r.type : ''))}"><label>类型颜色</label><input name="typeColor" type="color" value="${esc(typeSetting(r.customType || r.type).color || '#8c8c8c')}"><label class="row"><input name="saveCustomType" type="checkbox" style="width:auto; min-height:auto"> 保存为常用类型</label></div>
+            <label>状态</label><select name="status"><option value="">留空</option>${['待确认','计划参加','已参加','未参加','取消'].map(x=>`<option ${r.status===x?'selected':''}>${x}</option>`).join('')}</select>
+            <div class="section-title">法门信息</div>
+            <label>法门名称 *</label><input name="practiceName" required value="${esc(r.practiceName)}" placeholder="如：作明佛母、唐东嘉波长寿法">
+            <div class="grid2"><div><label>上师</label><input name="teacher" value="${esc(r.teacher)}"></div><div><label>地点</label><input name="location" value="${esc(r.location)}"></div></div>
+            <label>传承</label><select name="lineage"><option value="">留空</option>${lineages.map(x=>`<option ${r.lineage===x?'selected':''}>${x}</option>`).join('')}</select>
+            <div id="customLineageBox"><label>自定义传承</label><input name="customLineage" value="${esc(r.customLineage)}"></div>
+            <label>法类，多选</label><div class="chips" id="categoryChips">${cats.map(c=>`<button type="button" class="chip ${asArray(r.categories).includes(c)?'selected':''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+            <div id="customCatBox"><label>自定义法类，用逗号分隔</label><input name="customCategories" value="${esc(asArray(r.customCategories).join('，'))}"></div>
+            <div class="section-title">观想与备注</div>
+            <label>灌顶观想内容</label>${richEditor('visualizationNotesHtml', r.visualizationNotesHtml)}
+            <label>备注</label><textarea name="notes" placeholder="现场情况、后续确认、个人备注等">${esc(r.notes)}</textarea>
+            <div class="section-title">更多信息</div>
+            <label>主办方</label><input name="organizer" value="${esc(r.organizer)}">
+            <label>报名链接</label><input name="registrationLink" value="${esc(r.registrationLink)}" inputmode="url">
+            <label>法本链接</label><input name="textLink" value="${esc(r.textLink)}" inputmode="url">
+            <div class="grid2"><div><label>是否已领法本</label><select name="hasText"><option value="">留空</option>${['是','否','不适用'].map(x=>`<option ${r.hasText===x?'selected':''}>${x}</option>`).join('')}</select></div><div><label>隐私级别</label><select name="privacy">${['普通','私密','不确定'].map(x=>`<option ${r.privacy===x?'selected':''}>${x}</option>`).join('')}</select></div></div>
+          </div>
+          <div class="modal-actions"><button class="btn" type="button" data-close>取消</button><button class="btn primary" type="submit">保存</button></div>
+        </form>
+      `, root=>{
+        initRichEditor(root);
+        const form=$('#recordForm', root);
+        const toggle=()=>{
+          const type=form.type.value; $('#customTypeBox',root).classList.toggle('hidden', type!=='其他');
+          $('#customLineageBox',root).classList.toggle('hidden', form.lineage.value!=='其他');
+          $('#customCatBox',root).classList.toggle('hidden', !$$('.chip.selected',root).some(c=>c.dataset.cat==='其他'));
+        };
+        toggle(); form.type.onchange=toggle; form.lineage.onchange=toggle;
+        $('#categoryChips',root).onclick=e=>{ const b=e.target.closest('.chip'); if(b){ b.classList.toggle('selected'); toggle(); }};
+        root.addEventListener('click', e=>{ if(e.target.closest('[data-close]')) closeModal(); });
+        form.onsubmit=e=>{
+          e.preventDefault();
+          const fd=new FormData(form);
+          const selectedCats=$$('.chip.selected',root).map(b=>b.dataset.cat);
+          const rich=$('.rich-editor[data-name="visualizationNotesHtml"]',root).innerHTML.trim();
+          let type=norm(fd.get('type')), customType=norm(fd.get('customType'));
+          if(type==='其他' && customType && fd.get('saveCustomType')) addTypeSetting(customType, fd.get('typeColor') || '#8c8c8c');
+          const obj={
+            ...r,
+            id: isEdit ? r.id : uid('rec'), date: fd.get('date'), time:norm(fd.get('time')), type: type==='其他' ? '其他' : type, customType: type==='其他' ? customType : '', status:norm(fd.get('status')),
+            practiceName:norm(fd.get('practiceName')), teacher:norm(fd.get('teacher')), location:norm(fd.get('location')), lineage:norm(fd.get('lineage')), customLineage: fd.get('lineage')==='其他' ? norm(fd.get('customLineage')) : '',
+            categories:selectedCats.filter(c=>c!=='其他'), customCategories:selectedCats.includes('其他') ? asArray(fd.get('customCategories')) : [],
+            visualizationNotesHtml:rich, visualizationNotesPlainText:stripHtml(rich), notes:norm(fd.get('notes')), organizer:norm(fd.get('organizer')), registrationLink:norm(fd.get('registrationLink')), textLink:norm(fd.get('textLink')), hasText:norm(fd.get('hasText')), privacy:norm(fd.get('privacy')), updatedAt:nowIso(), createdAt: r.createdAt || nowIso()
+          };
+          if(isEdit) state.records=state.records.map(x=>x.id===obj.id?obj:x); else state.records.push(obj);
+          selectedDate=obj.date; currentMonth=parseLocalDate(obj.date); save(); closeModal(); render();
+        };
+      });
+    }
+    function addTypeSetting(name,color){
+      if(!name) return;
+      const existing=state.typeSettings.find(t=>t.name===name);
+      if(existing){ existing.color=color; existing.isHidden=false; existing.updatedAt=nowIso(); return; }
+      state.typeSettings.push({id:uid('typ'), name, color, isDefault:false, isHidden:false, sortOrder:state.typeSettings.length+1, createdAt:nowIso(), updatedAt:nowIso()});
+    }
+
+    function richEditor(name, html=''){
+      return `<div class="rich-wrap"><div class="rich-toolbar">
+        <select data-rich="block"><option value="P">正文</option><option value="H2">标题 1</option><option value="H3">标题 2</option><option value="BLOCKQUOTE">引用</option></select>
+        <select data-rich="size"><option value="3">正常</option><option value="2">小</option><option value="4">大</option><option value="5">很大</option></select>
+        <button type="button" data-cmd="bold"><b>B</b></button><button type="button" data-cmd="italic"><i>I</i></button><button type="button" data-cmd="insertUnorderedList">列表</button><button type="button" data-cmd="insertOrderedList">编号</button><button type="button" data-rich="highlight">高亮</button><button type="button" data-cmd="insertHorizontalRule">分隔</button><button type="button" data-cmd="removeFormat">清除</button>
+      </div><div class="rich-editor" contenteditable="true" data-name="${esc(name)}" data-placeholder="记录四灌、观想、种子字、甘露、脉轮、中脉等内容……">${html||''}</div></div>`;
+    }
+    function initRichEditor(root){
+      root.addEventListener('click', e=>{
+        const btn=e.target.closest('[data-cmd]'); if(btn){ e.preventDefault(); document.execCommand(btn.dataset.cmd, false, null); }
+        const hi=e.target.closest('[data-rich="highlight"]'); if(hi){ e.preventDefault(); document.execCommand('backColor', false, '#fff1a8'); }
+      });
+      root.addEventListener('change', e=>{
+        const block=e.target.closest('[data-rich="block"]'); if(block) document.execCommand('formatBlock', false, block.value);
+        const size=e.target.closest('[data-rich="size"]'); if(size) document.execCommand('fontSize', false, size.value);
+      });
+    }
+
+    function renderRecordsPage(){
+      const root=$('#page-records');
+      const types=visibleTypeOptions();
+      root.innerHTML=`
+        <div class="card">
+          <input id="recordSearch" placeholder="搜索法门 / 上师 / 地点 / 观想内容">
+          <div class="grid2"><div><label>类型</label><select id="filterType"><option value="">全部</option>${types.map(t=>`<option>${esc(t)}</option>`).join('')}</select></div><div><label>排序</label><select id="recordSort"><option value="dateDesc">日期从新到旧</option><option value="dateAsc">日期从旧到新</option><option value="nameAsc">法门名称 A-Z</option><option value="updatedDesc">最近更新</option></select></div></div>
+        </div>
+        <div id="recordsList"></div>`;
+      const refresh=()=>{
+        const q=norm($('#recordSearch').value).toLowerCase(); const ft=$('#filterType').value; const sort=$('#recordSort').value;
+        let list=[...state.records];
+        if(q) list=list.filter(r=>[r.practiceName,r.teacher,r.location,r.lineage,r.customLineage,typeName(r),r.status,asArray(r.categories).join(' '),asArray(r.customCategories).join(' '),r.visualizationNotesPlainText,r.notes,r.organizer,r.registrationLink,r.textLink].join(' ').toLowerCase().includes(q));
+        if(ft) list=list.filter(r=>typeName(r)===ft || r.type===ft);
+        list.sort((a,b)=> sort==='dateAsc' ? (a.date||'').localeCompare(b.date||'') : sort==='nameAsc' ? (a.practiceName||'').localeCompare(b.practiceName||'', 'zh') : sort==='updatedDesc' ? (b.updatedAt||'').localeCompare(a.updatedAt||'') : (b.date||'').localeCompare(a.date||''));
+        $('#recordsList').innerHTML=list.length?list.map(recordCard).join(''):'<div class="card empty">没有找到记录</div>';
+      };
+      refresh();
+      root.oninput=refresh; root.onchange=refresh;
+      root.onclick=e=>{ const card=e.target.closest('[data-record-id]'); if(card) showRecordDetail(card.dataset.recordId); };
+    }
+
+    function renderDailyPage(){
+      const root=$('#page-daily');
+      const top=state.dailyItems.filter(i=>!i.parentId).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+      if(selectedDailyId && getDaily(selectedDailyId)) { renderDailyDetail(root, selectedDailyId); return; }
+      root.innerHTML=`<div class="row between"><div class="muted small">按心咒 / 修法分组；加行可建子日课</div><button class="btn primary" data-add-daily>＋ 新建日课</button></div><div id="dailyList">${top.length?top.map(dailyCard).join(''):'<div class="card empty">暂无日课项目</div>'}</div>`;
+      root.onclick=e=>{
+        if(e.target.closest('[data-add-daily]')) openDailyForm({});
+        const card=e.target.closest('[data-daily-id]'); if(card){ selectedDailyId=card.dataset.dailyId; render(); }
+      };
+    }
+    function dailyCard(item){
+      const kids=childrenOf(item.id); const total=totalForDaily(item.id); const target=Number(item.targetCount||0);
+      if(kids.length) return `<div class="list-card" data-daily-id="${esc(item.id)}"><div class="bar"></div><div class="grow"><h3>${esc(item.name)}</h3><div class="meta">${kids.length} 个子日课</div><div class="meta">${kids.map(k=>k.name).join(' / ')}</div></div></div>`;
+      return `<div class="list-card" data-daily-id="${esc(item.id)}"><div class="bar"></div><div class="grow"><h3>${esc(item.name)}</h3>${item.mantraText?`<div class="meta">${esc(item.mantraText)}</div>`:''}<div class="meta">今日：${todayTotalForDaily(item.id)} 遍 ｜ 本月：${monthTotalForDaily(item.id)} 遍</div><div class="meta">累计：${total}${target?` / ${target}`:''} 遍 ${item.status?`｜ ${esc(item.status)}`:''}</div>${target?`<div class="progress"><div style="width:${pct(item)}%"></div></div>`:''}</div></div>`;
+    }
+    function renderDailyDetail(root,id){
+      const item=getDaily(id); const kids=childrenOf(id);
+      const title = item.name;
+      if(kids.length){
+        root.innerHTML=`<button class="btn smallbtn" data-back-daily>‹ 返回日课</button><div class="card"><h2 style="margin:0 0 6px">${esc(title)}</h2><div class="meta">${esc(item.type||'')} ${item.status?`｜ ${esc(item.status)}`:''}</div>${item.notes?`<p>${esc(item.notes)}</p>`:''}<div class="row wrap"><button class="btn primary" data-add-child="${esc(id)}">＋ 添加子日课</button><button class="btn" data-edit-daily="${esc(id)}">编辑父项目</button></div></div><div class="section-title">子日课</div>${kids.map(dailyCard).join('')}<div class="section-title">汇总日历</div>${dailySummaryCalendar(kids)}`;
+      } else {
+        const total=totalForDaily(id), target=Number(item.targetCount||0);
+        root.innerHTML=`<button class="btn smallbtn" data-back-daily>‹ 返回日课</button><div class="card"><h2 style="margin:0 0 6px">${esc(title)}</h2>${item.mantraText?`<div class="soft">${esc(item.mantraText)}</div>`:''}<div class="meta" style="margin-top:8px">今日：${todayTotalForDaily(id)} 遍 ｜ 本月：${monthTotalForDaily(id)} 遍</div><div class="meta">累计：${total}${target?` / ${target}`:''} 遍 ${item.status?`｜ ${esc(item.status)}`:''}</div>${target?`<div class="progress"><div style="width:${pct(item)}%"></div></div>`:''}<div class="row wrap" style="margin-top:12px"><button class="btn primary" data-count-today="${esc(id)}">记录今天</button><button class="btn" data-add-count="${esc(id)}">补录日期</button><button class="btn" data-edit-daily="${esc(id)}">编辑日课</button><button class="btn danger" data-delete-daily="${esc(id)}">删除</button></div></div><div class="month-head"><button class="icon-btn" data-daily-prev>‹</button><div class="month-title">${dailyMonth.getFullYear()}年${dailyMonth.getMonth()+1}月</div><button class="icon-btn" data-daily-next>›</button></div><div class="card"><div class="calendar" id="dailyCalendarGrid"></div></div><div id="dailySelected"></div>${linkedResourcesBlock('', id)}`;
+        setTimeout(()=>renderDailyCalendarGrid(id),0);
+      }
+      root.onclick=e=>{
+        if(e.target.closest('[data-back-daily]')){ selectedDailyId=null; render(); }
+        const addChild=e.target.closest('[data-add-child]'); if(addChild) openDailyForm({parentId:addChild.dataset.addChild});
+        const edit=e.target.closest('[data-edit-daily]'); if(edit) openDailyForm(getDaily(edit.dataset.editDaily));
+        const card=e.target.closest('[data-daily-id]'); if(card){ selectedDailyId=card.dataset.dailyId; render(); }
+        const today=e.target.closest('[data-count-today]'); if(today) openCountForm(today.dataset.countToday, todayStr());
+        const add=e.target.closest('[data-add-count]'); if(add) openCountForm(add.dataset.addCount);
+        if(e.target.closest('[data-daily-prev]')){ dailyMonth=addMonths(dailyMonth,-1); render(); }
+        if(e.target.closest('[data-daily-next]')){ dailyMonth=addMonths(dailyMonth,1); render(); }
+        const del=e.target.closest('[data-delete-daily]'); if(del) deleteDaily(del.dataset.deleteDaily);
+        const res=e.target.closest('[data-resource-id]'); if(res) showResourceDetail(res.dataset.resourceId);
+      };
+    }
+    function dailySummaryCalendar(kids){
+      const mk=monthKey(dailyMonth);
+      const rows=state.dailyCounts.filter(c=>kids.some(k=>k.id===c.practiceItemId) && c.date?.startsWith(mk)).sort((a,b)=>a.date.localeCompare(b.date));
+      const by={}; rows.forEach(c=>{ by[c.date]=by[c.date]||[]; by[c.date].push(c); });
+      return `<div class="card">${Object.keys(by).length?Object.entries(by).map(([date,cs])=>`<div class="soft" style="margin:8px 0"><b>${esc(fmtDate(date))}</b><br>${cs.map(c=>`${esc(getDaily(c.practiceItemId)?.name||'日课')}：${Number(c.count||0)} 遍`).join('<br>')}</div>`).join(''):'<div class="empty">本月暂无子日课记录</div>'}</div>`;
+    }
+    function renderDailyCalendarGrid(id){
+      const grid=$('#dailyCalendarGrid'); if(!grid) return;
+      let selected=todayStr();
+      const draw=()=>{
+        renderCalendarGrid(grid, dailyMonth, selected, date=>state.dailyCounts.filter(c=>c.practiceItemId===id && c.date===date), date=>{ selected=date; renderDailySelected(id,date); }, {daily:true});
+        renderDailySelected(id, selected);
+      };
+      draw();
+    }
+    function renderDailySelected(id,date){
+      const box=$('#dailySelected'); if(!box) return;
+      const counts=state.dailyCounts.filter(c=>c.practiceItemId===id && c.date===date);
+      box.innerHTML=`<div class="section-title">${esc(fmtDate(date))}</div>${counts.length?counts.map(c=>`<div class="list-card"><div class="grow"><h3>${Number(c.count||0)} 遍</h3>${c.notes?`<div class="meta">${esc(c.notes)}</div>`:''}</div><button class="btn smallbtn" data-edit-count="${esc(c.id)}">编辑</button><button class="btn smallbtn danger" data-delete-count="${esc(c.id)}">删除</button></div>`).join(''):`<div class="card empty">暂无计数<br><button class="btn primary" data-add-count-date="${esc(date)}">补录这天</button></div>`}`;
+      box.onclick=e=>{
+        const add=e.target.closest('[data-add-count-date]'); if(add) openCountForm(id, add.dataset.addCountDate);
+        const edit=e.target.closest('[data-edit-count]'); if(edit){ const c=state.dailyCounts.find(x=>x.id===edit.dataset.editCount); openCountForm(id, c.date, c); }
+        const del=e.target.closest('[data-delete-count]'); if(del) deleteCount(del.dataset.deleteCount);
+      };
+    }
+    function openDailyForm(data={}){
+      const isEdit=!!data.id;
+      const item={ parentId:'', name:'', type:'心咒', customType:'', mantraText:'', deityOrPractice:'', teacher:'', lineage:'', customLineage:'', defaultCount:state.settings.defaultDailyCount||108, targetCount:'', manualBaseCount:0, startDate:'', completedDate:'', status:state.settings.defaultDailyPracticeStatus||'进行中', isDaily:true, notes:'', sortOrder:state.dailyItems.length+1, ...data };
+      const parents=state.dailyItems.filter(i=>!i.parentId && i.id!==item.id);
+      const types=['心咒','仪轨','加行','护法','烟供','佛号','祈请文','其他'];
+      const lineages=['宁玛','萨迦','噶举','格鲁','觉囊','贝玛林巴','不确定','其他'];
+      openModal(`<form id="dailyForm"><div class="modal-head"><div class="modal-title">${isEdit?'编辑':'新增'}日课</div><button class="icon-btn" type="button" data-close>×</button></div><div class="modal-body"><div class="section-title">基础信息</div><label>日课名称 *</label><input name="name" required value="${esc(item.name)}"><label>类型</label><select name="type">${types.map(t=>`<option ${item.type===t?'selected':''}>${t}</option>`).join('')}</select><div id="dailyCustomType"><label>自定义类型</label><input name="customType" value="${esc(item.customType)}"></div><label>父级日课</label><select name="parentId"><option value="">无，作为顶层日课</option>${parents.map(p=>`<option value="${esc(p.id)}" ${item.parentId===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select><div class="section-title">内容信息</div><label>心咒内容</label><textarea name="mantraText">${esc(item.mantraText)}</textarea><label>本尊 / 法门</label><input name="deityOrPractice" value="${esc(item.deityOrPractice)}"><label>上师 / 来源</label><input name="teacher" value="${esc(item.teacher)}"><label>传承</label><select name="lineage"><option value="">留空</option>${lineages.map(x=>`<option ${item.lineage===x?'selected':''}>${x}</option>`).join('')}</select><div id="dailyCustomLineage"><label>自定义传承</label><input name="customLineage" value="${esc(item.customLineage)}"></div><label>备注</label><textarea name="notes">${esc(item.notes)}</textarea><div class="section-title">计数目标</div><div class="grid2"><div><label>默认每日遍数</label><input name="defaultCount" type="number" min="0" value="${esc(item.defaultCount)}"></div><div><label>目标遍数</label><input name="targetCount" type="number" min="0" value="${esc(item.targetCount)}"></div></div><label>历史基础遍数</label><input name="manualBaseCount" type="number" min="0" value="${esc(item.manualBaseCount)}"><div class="grid2"><div><label>开始日期</label><input name="startDate" type="date" value="${esc(item.startDate)}"></div><div><label>完成日期</label><input name="completedDate" type="date" value="${esc(item.completedDate)}"></div></div><label>状态</label><select name="status"><option value="">留空</option>${['进行中','已完成','暂停','不定期'].map(x=>`<option ${item.status===x?'selected':''}>${x}</option>`).join('')}</select><label class="row"><input name="isDaily" type="checkbox" style="width:auto;min-height:auto" ${item.isDaily?'checked':''}> 是否日课</label></div><div class="modal-actions"><button type="button" class="btn" data-close>取消</button><button class="btn primary" type="submit">保存</button></div></form>`, root=>{
+        const form=$('#dailyForm',root); const toggle=()=>{ $('#dailyCustomType',root).classList.toggle('hidden', form.type.value!=='其他'); $('#dailyCustomLineage',root).classList.toggle('hidden', form.lineage.value!=='其他');}; toggle(); form.type.onchange=toggle; form.lineage.onchange=toggle;
+        root.addEventListener('click', e=>{if(e.target.closest('[data-close]')) closeModal();});
+        form.onsubmit=e=>{e.preventDefault(); const fd=new FormData(form); const obj={...item,id:isEdit?item.id:uid('daily'), parentId:fd.get('parentId'), name:norm(fd.get('name')), type:norm(fd.get('type')), customType:fd.get('type')==='其他'?norm(fd.get('customType')):'', mantraText:norm(fd.get('mantraText')), deityOrPractice:norm(fd.get('deityOrPractice')), teacher:norm(fd.get('teacher')), lineage:norm(fd.get('lineage')), customLineage:fd.get('lineage')==='其他'?norm(fd.get('customLineage')):'', defaultCount:Number(fd.get('defaultCount')||0), targetCount:Number(fd.get('targetCount')||0), manualBaseCount:Number(fd.get('manualBaseCount')||0), startDate:fd.get('startDate'), completedDate:fd.get('completedDate'), status:norm(fd.get('status')), isDaily:!!fd.get('isDaily'), notes:norm(fd.get('notes')), updatedAt:nowIso(), createdAt:item.createdAt||nowIso()}; if(isEdit) state.dailyItems=state.dailyItems.map(x=>x.id===obj.id?obj:x); else state.dailyItems.push(obj); save(); closeModal(); selectedDailyId=obj.parentId||obj.id; render();};
+      });
+    }
+    function openCountForm(itemId,date='', countObj=null){
+      const item=getDaily(itemId); if(!item) return;
+      const c={id:null, practiceItemId:itemId, date:date||todayStr(), count:item.defaultCount||state.settings.defaultDailyCount||108, notes:'', ...countObj};
+      openModal(`<form id="countForm"><div class="modal-head"><div class="modal-title">${esc(item.name)} · 计数</div><button type="button" class="icon-btn" data-close>×</button></div><div class="modal-body"><label>日期 *</label><input name="date" type="date" required value="${esc(c.date)}"><label>遍数 *</label><input name="count" type="number" min="0" required value="${esc(c.count)}"><label>备注</label><textarea name="notes">${esc(c.notes)}</textarea></div><div class="modal-actions"><button type="button" class="btn" data-close>取消</button><button class="btn primary" type="submit">保存</button></div></form>`, root=>{ root.addEventListener('click',e=>{if(e.target.closest('[data-close]'))closeModal();}); $('#countForm',root).onsubmit=e=>{e.preventDefault(); const fd=new FormData(e.target); const obj={...c,id:c.id||uid('cnt'), practiceItemId:itemId, date:fd.get('date'), count:Number(fd.get('count')||0), notes:norm(fd.get('notes')), updatedAt:nowIso(), createdAt:c.createdAt||nowIso()}; if(c.id) state.dailyCounts=state.dailyCounts.map(x=>x.id===obj.id?obj:x); else { const existing=state.dailyCounts.find(x=>x.practiceItemId===itemId && x.date===obj.date); if(existing && !confirm('这一天已有记录，仍要新增一条吗？')) return; state.dailyCounts.push(obj); } save(); closeModal(); render(); }; });
+    }
+    function deleteCount(id){ if(!confirm('确定删除这条计数吗？')) return; state.dailyCounts=state.dailyCounts.filter(c=>c.id!==id); save(); render(); }
+    function deleteDaily(id){
+      const item=getDaily(id); if(!item) return;
+      if(childrenOf(id).length) return alert('请先删除或移动子日课。');
+      if(!confirm(`确定删除「${item.name}」吗？相关计数也会删除。`)) return;
+      state.dailyItems=state.dailyItems.filter(x=>x.id!==id); state.dailyCounts=state.dailyCounts.filter(x=>x.practiceItemId!==id); state.resources=state.resources.map(x=>x.relatedDailyPracticeId===id?{...x,relatedDailyPracticeId:''}:x); save(); selectedDailyId=null; render();
+    }
+    function linkedResourcesBlock(recordId='', dailyId=''){
+      const linked=state.resources.filter(r=>(recordId && r.relatedRecordId===recordId) || (dailyId && r.relatedDailyPracticeId===dailyId));
+      return `<div class="section-title">相关法本 / 链接</div>${linked.length?linked.map(resourceCard).join(''):'<div class="card empty">暂无关联资料</div>'}`;
+    }
+
+    function renderResourcesPage(){
+      const root=$('#page-resources');
+      root.innerHTML=`<div class="card"><input id="resourceSearch" placeholder="搜索标题 / 法门 / 链接 / 备注"><div class="grid2"><div><label>类型</label><select id="resourceType"><option value="">全部</option>${resourceTypes().map(t=>`<option>${esc(t)}</option>`).join('')}</select></div><div><label>隐私</label><select id="resourcePrivacy"><option value="">全部</option><option>公开</option><option>私密</option><option>不确定</option></select></div></div></div><div id="resourceList"></div>`;
+      const refresh=()=>{ const q=norm($('#resourceSearch').value).toLowerCase(), ft=$('#resourceType').value, fp=$('#resourcePrivacy').value; let list=[...state.resources]; if(q) list=list.filter(r=>[r.title,r.type,r.customType,r.url,r.relatedPracticeName,r.notes].join(' ').toLowerCase().includes(q)); if(ft) list=list.filter(r=>(r.customType||r.type)===ft); if(fp) list=list.filter(r=>r.privacy===fp); list.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||'')); $('#resourceList').innerHTML=list.length?list.map(resourceCard).join(''):'<div class="card empty">没有找到资料</div>'; };
+      refresh(); root.oninput=refresh; root.onchange=refresh; root.onclick=e=>{ const card=e.target.closest('[data-resource-id]'); if(card) showResourceDetail(card.dataset.resourceId); };
+    }
+    function resourceTypes(){ return ['法本','PDF','官网','视频','音频','报名链接','Facebook 活动','Google Drive','图片','文字备注','其他']; }
+    function resourceCard(r){ return `<div class="list-card" data-resource-id="${esc(r.id)}"><div class="bar"></div><div class="grow"><h3>${esc(r.title)}</h3><div class="meta">${esc(r.customType||r.type||'资料')} ${r.privacy?`｜ ${esc(r.privacy)}`:''}${r.requiresTransmission?`｜ 口传：${esc(r.requiresTransmission)}`:''}</div><div class="meta">${r.relatedPracticeName?`关联：${esc(r.relatedPracticeName)}`:''}</div></div></div>`; }
+    function openResourceForm(data={}){
+      const isEdit=!!data.id;
+      const r={title:'',type:'法本',customType:'',url:'',relatedPracticeName:'',relatedRecordId:'',relatedDailyPracticeId:'',requiresTransmission:'',privacy:state.settings.defaultPrivacy||'私密',notes:'',...data};
+      openModal(`<form id="resourceForm"><div class="modal-head"><div class="modal-title">${isEdit?'编辑':'新增'}法本 / 链接</div><button type="button" class="icon-btn" data-close>×</button></div><div class="modal-body"><div class="section-title">基础信息</div><label>标题 *</label><input name="title" required value="${esc(r.title)}"><label>类型</label><select name="type">${resourceTypes().map(t=>`<option ${r.type===t?'selected':''}>${t}</option>`).join('')}</select><div id="resCustomType"><label>自定义类型</label><input name="customType" value="${esc(r.customType)}"></div><label>链接</label><input name="url" inputmode="url" value="${esc(r.url)}"><div class="section-title">关联信息</div><label>关联法门</label><input name="relatedPracticeName" value="${esc(r.relatedPracticeName)}"><label>关联受法记录</label><select name="relatedRecordId"><option value="">不关联</option>${state.records.map(x=>`<option value="${esc(x.id)}" ${r.relatedRecordId===x.id?'selected':''}>${esc(x.date)} ${esc(x.practiceName)}｜${esc(x.teacher||'')}</option>`).join('')}</select><label>关联日课项目</label><select name="relatedDailyPracticeId"><option value="">不关联</option>${state.dailyItems.map(x=>`<option value="${esc(x.id)}" ${r.relatedDailyPracticeId===x.id?'selected':''}>${esc(displayDailyPath(x.id))}</option>`).join('')}</select><div class="section-title">权限与备注</div><div class="grid2"><div><label>是否需要口传</label><select name="requiresTransmission"><option value="">留空</option>${['是','否','不确定'].map(x=>`<option ${r.requiresTransmission===x?'selected':''}>${x}</option>`).join('')}</select></div><div><label>隐私级别</label><select name="privacy">${['公开','私密','不确定'].map(x=>`<option ${r.privacy===x?'selected':''}>${x}</option>`).join('')}</select></div></div><label>备注</label><textarea name="notes">${esc(r.notes)}</textarea></div><div class="modal-actions"><button type="button" class="btn" data-close>取消</button><button class="btn primary" type="submit">保存</button></div></form>`, root=>{ const form=$('#resourceForm',root); const toggle=()=>$('#resCustomType',root).classList.toggle('hidden',form.type.value!=='其他'); toggle(); form.type.onchange=toggle; root.addEventListener('click',e=>{if(e.target.closest('[data-close]')) closeModal();}); form.onsubmit=e=>{e.preventDefault(); const fd=new FormData(form); const obj={...r,id:isEdit?r.id:uid('res'), title:norm(fd.get('title')), type:norm(fd.get('type')), customType:fd.get('type')==='其他'?norm(fd.get('customType')):'', url:norm(fd.get('url')), relatedPracticeName:norm(fd.get('relatedPracticeName')), relatedRecordId:fd.get('relatedRecordId'), relatedDailyPracticeId:fd.get('relatedDailyPracticeId'), requiresTransmission:norm(fd.get('requiresTransmission')), privacy:norm(fd.get('privacy')), notes:norm(fd.get('notes')), updatedAt:nowIso(), createdAt:r.createdAt||nowIso()}; if(isEdit) state.resources=state.resources.map(x=>x.id===obj.id?obj:x); else state.resources.push(obj); save(); closeModal(); render();}; });
+    }
+    function showResourceDetail(id){ const r=getResource(id); if(!r)return; openModal(`<div class="modal-head"><div class="modal-title">资料详情</div><button class="icon-btn" data-close>×</button></div><div class="modal-body detail"><h2>${esc(r.title)}</h2><div class="card">${kv('类型', r.customType||r.type)}${kv('链接', r.url, true)}${kv('关联法门', r.relatedPracticeName)}${kv('关联记录', r.relatedRecordId ? `${getRecord(r.relatedRecordId)?.date || ''} ${getRecord(r.relatedRecordId)?.practiceName || ''}` : '')}${kv('关联日课', r.relatedDailyPracticeId ? displayDailyPath(r.relatedDailyPracticeId) : '')}${kv('需要口传', r.requiresTransmission)}${kv('隐私级别', r.privacy)}</div>${r.notes?`<div class="section-title">备注</div><div class="soft">${esc(r.notes).replace(/\n/g,'<br>')}</div>`:''}<div class="row wrap"><button class="btn primary" data-edit-resource="${esc(id)}">编辑</button>${r.url?`<a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">打开链接</a>`:''}<button class="btn danger" data-delete-resource="${esc(id)}">删除</button></div></div>`, root=>{ root.addEventListener('click',e=>{ if(e.target.closest('[data-close]')) closeModal(); const edit=e.target.closest('[data-edit-resource]'); if(edit) openResourceForm(getResource(edit.dataset.editResource)); const del=e.target.closest('[data-delete-resource]'); if(del) deleteResource(del.dataset.deleteResource); }); }); }
+    function deleteResource(id){ const r=getResource(id); if(!r)return; if(!confirm(`确定删除「${r.title}」吗？`))return; state.resources=state.resources.filter(x=>x.id!==id); save(); closeModal(); render(); }
+    function displayDailyPath(id){ const item=getDaily(id); if(!item)return ''; if(item.parentId){ const p=getDaily(item.parentId); return `${p?.name||''} > ${item.name}`; } return item.name; }
+
+    function renderSettingsPage(){
+      const root=$('#page-settings');
+      root.innerHTML=`
+        <div class="card"><div class="section-title" style="margin-top:0">备份与恢复</div><button class="btn primary" data-export-json>导出完整 JSON 备份</button> <button class="btn" data-import-json>导入 JSON 备份</button><div class="muted small" style="margin-top:8px">上次备份：${esc(state.settings.lastBackupAt || '尚未备份')}</div></div>
+        <div class="card"><div class="section-title" style="margin-top:0">CSV</div><div class="row wrap"><button class="btn" data-export-csv="records">导出受法记录 CSV</button><button class="btn" data-import-records-csv>导入受法记录 CSV</button><button class="btn" data-export-csv="dailyItems">导出日课项目 CSV</button><button class="btn" data-export-csv="dailyCounts">导出日课计数 CSV</button><button class="btn" data-export-csv="resources">导出法本链接 CSV</button></div></div>
+        <div class="card"><div class="section-title" style="margin-top:0">类型与颜色</div><div id="typeSettingsList">${state.typeSettings.sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).map(t=>typeSettingRow(t)).join('')}</div><button class="btn primary" data-add-type>＋ 添加类型</button></div>
+        <div class="card"><div class="section-title" style="margin-top:0">默认设置</div><div class="grid2"><div><label>默认地点</label><input id="setDefaultLocation" value="${esc(state.settings.defaultLocation)}"></div><div><label>默认传承</label><input id="setDefaultLineage" value="${esc(state.settings.defaultLineage)}"></div></div><div class="grid2"><div><label>默认隐私级别</label><select id="setDefaultPrivacy">${['普通','私密','不确定'].map(x=>`<option ${state.settings.defaultPrivacy===x?'selected':''}>${x}</option>`).join('')}</select></div><div><label>默认每日遍数</label><input id="setDefaultDailyCount" type="number" value="${esc(state.settings.defaultDailyCount)}"></div></div><label>日历每周开始日</label><select id="setWeekStart"><option ${state.settings.calendarWeekStart==='周一'?'selected':''}>周一</option><option ${state.settings.calendarWeekStart==='周日'?'selected':''}>周日</option></select><button class="btn primary" data-save-settings>保存默认设置</button></div>
+        <div class="card"><div class="section-title" style="margin-top:0">数据管理</div><div class="row wrap"><button class="btn danger" data-clear-all>清空全部数据</button><button class="btn" data-reset-sample>恢复示例数据</button></div></div>
+        <div class="card"><div class="section-title" style="margin-top:0">关于</div><p class="muted small">本 App 数据保存在当前浏览器本地，不会上传服务器。更换手机、清理浏览器缓存或更换网址前，请先导出 JSON 备份。</p><p class="muted small">版本：MVP 2.0 · PWA 本地版</p></div>
+      `;
+      root.onclick=e=>{
+        if(e.target.closest('[data-export-json]')) exportJson();
+        if(e.target.closest('[data-import-json]')) importJson();
+        const csv=e.target.closest('[data-export-csv]'); if(csv) exportCsv(csv.dataset.exportCsv);
+        if(e.target.closest('[data-import-records-csv]')) importRecordsCsv();
+        if(e.target.closest('[data-add-type]')) openTypeForm({});
+        const edit=e.target.closest('[data-edit-type]'); if(edit) openTypeForm(state.typeSettings.find(t=>t.id===edit.dataset.editType));
+        const hide=e.target.closest('[data-hide-type]'); if(hide){ const t=state.typeSettings.find(x=>x.id===hide.dataset.hideType); if(t){t.isHidden=!t.isHidden;t.updatedAt=nowIso(); save(); render();}}
+        if(e.target.closest('[data-save-settings]')) saveAppSettings();
+        if(e.target.closest('[data-clear-all]')) clearAll();
+        if(e.target.closest('[data-reset-sample]')){ if(confirm('恢复示例数据会覆盖当前数据。建议先导出备份。确定继续？')){ state=defaultState(); save(); render(); }}
+      };
+    }
+    function typeSettingRow(t){ return `<div class="list-card"><span class="color-swatch" style="background:${esc(t.color)}"></span><div class="grow"><h3>${esc(t.name)}</h3><div class="meta">${t.isDefault?'默认类型':'自定义类型'}${t.isHidden?' ｜ 已隐藏':''}</div></div><button class="btn smallbtn" data-edit-type="${esc(t.id)}">编辑</button><button class="btn smallbtn" data-hide-type="${esc(t.id)}">${t.isHidden?'显示':'隐藏'}</button></div>`; }
+    function openTypeForm(data={}){ const isEdit=!!data.id; const t={name:'',color:'#8c8c8c',sortOrder:state.typeSettings.length+1,isDefault:false,isHidden:false,...data}; openModal(`<form id="typeForm"><div class="modal-head"><div class="modal-title">${isEdit?'编辑':'新增'}类型</div><button type="button" class="icon-btn" data-close>×</button></div><div class="modal-body"><label>类型名称 *</label><input name="name" required value="${esc(t.name)}"><label>颜色 *</label><input name="color" type="color" value="${esc(t.color)}"><label>排序</label><input name="sortOrder" type="number" value="${esc(t.sortOrder||0)}"><label class="row"><input name="isHidden" type="checkbox" style="width:auto;min-height:auto" ${t.isHidden?'checked':''}> 隐藏</label></div><div class="modal-actions"><button type="button" class="btn" data-close>取消</button><button class="btn primary" type="submit">保存</button></div></form>`, root=>{root.addEventListener('click',e=>{if(e.target.closest('[data-close]'))closeModal();}); $('#typeForm',root).onsubmit=e=>{e.preventDefault(); const fd=new FormData(e.target); const obj={...t,id:isEdit?t.id:uid('typ'),name:norm(fd.get('name')),color:fd.get('color'),sortOrder:Number(fd.get('sortOrder')||0),isHidden:!!fd.get('isHidden'),updatedAt:nowIso(),createdAt:t.createdAt||nowIso()}; if(isEdit) state.typeSettings=state.typeSettings.map(x=>x.id===obj.id?obj:x); else state.typeSettings.push(obj); save(); closeModal(); render();};}); }
+    function saveAppSettings(){ state.settings.defaultLocation=$('#setDefaultLocation').value; state.settings.defaultLineage=$('#setDefaultLineage').value; state.settings.defaultPrivacy=$('#setDefaultPrivacy').value; state.settings.defaultDailyCount=Number($('#setDefaultDailyCount').value||108); state.settings.calendarWeekStart=$('#setWeekStart').value; save(); alert('已保存默认设置'); render(); }
+
+    function exportJson(){ state.settings.lastBackupAt=nowIso(); save(); downloadFile(`dharma-records-backup-${todayStr()}.json`, JSON.stringify(state,null,2), 'application/json'); render(); }
+    function importJson(){ chooseFile('.json', file=>{ const reader=new FileReader(); reader.onload=()=>{ try{ const incoming=migrate(JSON.parse(reader.result)); const mode=confirm('确定覆盖当前数据吗？\n点“确定”=覆盖；点“取消”=合并。')?'cover':'merge'; if(mode==='cover') state=incoming; else { state.records=mergeById(state.records,incoming.records); state.dailyItems=mergeById(state.dailyItems,incoming.dailyItems); state.dailyCounts=mergeById(state.dailyCounts,incoming.dailyCounts); state.resources=mergeById(state.resources,incoming.resources); state.typeSettings=mergeById(state.typeSettings,incoming.typeSettings); state.settings={...state.settings,...incoming.settings}; } save(); alert('导入完成'); render(); }catch(e){alert('导入失败：JSON 格式不正确');} }; reader.readAsText(file); }); }
+    function mergeById(a=[],b=[]){ const map=new Map(a.map(x=>[x.id,x])); b.forEach(x=>map.set(x.id,x)); return Array.from(map.values()); }
+    function downloadFile(name, content, type='text/plain;charset=utf-8'){ const blob=new Blob([content],{type}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(url),500); }
+    function exportCsv(kind){ const rows = kind==='records'?state.records:kind==='dailyItems'?state.dailyItems:kind==='dailyCounts'?state.dailyCounts:state.resources; const csv=toCsv(rows); downloadFile(`${kind}-${todayStr()}.csv`, csv, 'text/csv;charset=utf-8'); }
+    function toCsv(rows){ if(!rows.length) return ''; const cols=Array.from(rows.reduce((s,r)=>{Object.keys(r).forEach(k=>s.add(k)); return s;}, new Set())); return [cols.join(','), ...rows.map(r=>cols.map(c=>csvCell(Array.isArray(r[c])?r[c].join('，'):r[c])).join(','))].join('\n'); }
+    function csvCell(v=''){ const s=String(v??''); return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s; }
+    function importRecordsCsv(){ chooseFile('.csv', file=>{ const reader=new FileReader(); reader.onload=()=>{ try{ const rows=parseCsv(reader.result); const imported=rows.map(row=>({ id:uid('rec'), date:row.date||row['日期']||todayStr(), time:row.time||row['时间']||'', type:row.type||row['类型']||'灌顶', customType:row.customType||row['自定义类型']||'', status:row.status||row['状态']||'', practiceName:row.practiceName||row['法门名称']||row['法门']||'', teacher:row.teacher||row['上师']||'', location:row.location||row['地点']||'', lineage:row.lineage||row['传承']||'', customLineage:row.customLineage||row['自定义传承']||'', categories:asArray(row.categories||row['法类']), customCategories:asArray(row.customCategories||row['自定义法类']), visualizationNotesHtml:esc(row.visualizationNotesPlainText||row['灌顶观想内容']||'').replace(/\n/g,'<br>'), visualizationNotesPlainText:row.visualizationNotesPlainText||row['灌顶观想内容']||'', notes:row.notes||row['备注']||'', organizer:row.organizer||row['主办方']||'', registrationLink:row.registrationLink||row['报名链接']||'', textLink:row.textLink||row['法本链接']||'', hasText:row.hasText||row['是否已领法本']||'', privacy:row.privacy||row['隐私级别']||state.settings.defaultPrivacy, createdAt:nowIso(), updatedAt:nowIso()})).filter(r=>r.date && r.practiceName); state.records.push(...imported); save(); alert(`导入 ${imported.length} 条受法记录`); render(); }catch(e){ alert('CSV 导入失败'); } }; reader.readAsText(file); }); }
+    function parseCsv(text){ const lines=[]; let row=[], cell='', q=false; for(let i=0;i<text.length;i++){ const ch=text[i], next=text[i+1]; if(q){ if(ch==='"'&&next==='"'){cell+='"';i++;} else if(ch==='"') q=false; else cell+=ch; } else { if(ch==='"') q=true; else if(ch===','){row.push(cell);cell='';} else if(ch==='\n'){row.push(cell);lines.push(row);row=[];cell='';} else if(ch!=='\r') cell+=ch; } } row.push(cell); lines.push(row); const head=lines.shift().map(h=>h.trim()); return lines.filter(r=>r.some(Boolean)).map(r=>Object.fromEntries(head.map((h,i)=>[h,r[i]||'']))); }
+    function chooseFile(accept, cb){ const input=$('#fileInput'); input.accept=accept; input.value=''; input.onchange=()=>{ if(input.files[0]) cb(input.files[0]); }; input.click(); }
+    function clearAll(){ if(!confirm('建议先导出 JSON 备份。确定要清空全部数据吗？')) return; const phrase=prompt('请输入“确认清空”'); if(phrase==='确认清空'){ state={...defaultState(), records:[], dailyItems:[], dailyCounts:[], resources:[]}; save(); render(); } }
+
+    function openModal(html, onReady){ const modal=$('#modal'); $('#modalContent').innerHTML=html; if(onReady) onReady($('#modalContent')); modal.showModal(); }
+    function closeModal(){ $('#modal').close(); }
+
+    $$('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>{ currentTab=btn.dataset.tab; selectedDailyId=null; render(); }));
+    $('#fab').addEventListener('click',()=>{ if(currentTab==='calendar'||currentTab==='records') openRecordForm({date: currentTab==='calendar'?selectedDate:todayStr()}); if(currentTab==='daily') openDailyForm({}); if(currentTab==='resources') openResourceForm({}); });
+    $('#quickBackupBtn').addEventListener('click', exportJson);
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+    save(); render();
+  })();
+  </script>
+</body>
+</html>

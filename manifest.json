@@ -1,0 +1,14 @@
+{
+  "name": "灌顶与日课记录",
+  "short_name": "受法记录",
+  "description": "本地保存的灌顶、口传、开示、日课与法本链接记录 PWA。",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fbf7ef",
+  "theme_color": "#8b5a2b",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
