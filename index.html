@@ -186,23 +186,10 @@
       defaultDailyCount: 108, defaultDailyPracticeStatus: '进行中', calendarWeekStart: '周一', language: '中文', theme: 'default', lastBackupAt: ''
     };
     const defaultState = () => ({
-      records: [
-        { id: uid('rec'), date:'2026-05-23', time:'', type:'灌顶', customType:'', status:'已参加', practiceName:'作明佛母', teacher:'岗顶法王', location:'墨尔本', lineage:'贝玛林巴', customLineage:'', categories:['怀业','度母','本尊'], customCategories:[], visualizationNotesHtml:'<h3>灌顶观想内容</h3><p>上师与佛母无二；大日如来七支坐；度母头、喉、心三处放光，三十二眷属融入。可继续补充四灌、甘露、脉轮、中脉等细节。</p>', visualizationNotesPlainText:'灌顶观想内容 上师与佛母无二；大日如来七支坐；度母头、喉、心三处放光，三十二眷属融入。可继续补充四灌、甘露、脉轮、中脉等细节。', notes:'示例记录，可删除或编辑。', organizer:'', registrationLink:'', textLink:'', hasText:'', privacy:'私密', createdAt:nowIso(), updatedAt:nowIso() },
-        { id: uid('rec'), date:'2026-07-11', time:'下午', type:'口传', customType:'', status:'计划参加', practiceName:'唐东嘉波长寿法', teacher:'南开宁波仁波切', location:'堪培拉', lineage:'宁玛', customLineage:'', categories:['长寿'], customCategories:[], visualizationNotesHtml:'', visualizationNotesPlainText:'', notes:'未来活动示例。', organizer:'', registrationLink:'', textLink:'', hasText:'', privacy:'私密', createdAt:nowIso(), updatedAt:nowIso() }
-      ],
-      dailyItems: [
-        { id:'daily_tara', parentId:'', name:'绿度母心咒', type:'心咒', customType:'', mantraText:'嗡 达咧 都达咧 都咧 梭哈', deityOrPractice:'绿度母', teacher:'', lineage:'宁玛', customLineage:'', defaultCount:108, targetCount:100000, manualBaseCount:0, startDate:'', completedDate:'', status:'进行中', isDaily:true, notes:'', sortOrder:1, createdAt:nowIso(), updatedAt:nowIso() },
-        { id:'daily_chenrezig', parentId:'', name:'观音心咒', type:'心咒', customType:'', mantraText:'嗡 玛尼 贝美 吽', deityOrPractice:'观音', teacher:'', lineage:'', customLineage:'', defaultCount:108, targetCount:100000, manualBaseCount:100000, startDate:'', completedDate:'2026-06-10', status:'已完成', isDaily:true, notes:'已完成十万遍示例。', sortOrder:2, createdAt:nowIso(), updatedAt:nowIso() },
-        { id:'daily_ngondro', parentId:'', name:'北伏藏加行', type:'加行', customType:'', mantraText:'', deityOrPractice:'北伏藏加行', teacher:'', lineage:'宁玛', customLineage:'', defaultCount:108, targetCount:0, manualBaseCount:0, startDate:'', completedDate:'', status:'进行中', isDaily:true, notes:'组合日课示例。', sortOrder:3, createdAt:nowIso(), updatedAt:nowIso() },
-        { id:'daily_ngondro_refuge', parentId:'daily_ngondro', name:'皈依发心', type:'加行', customType:'', mantraText:'', deityOrPractice:'北伏藏加行', teacher:'', lineage:'宁玛', customLineage:'', defaultCount:108, targetCount:100000, manualBaseCount:0, startDate:'', completedDate:'', status:'进行中', isDaily:true, notes:'', sortOrder:1, createdAt:nowIso(), updatedAt:nowIso() },
-        { id:'daily_ngondro_vajra', parentId:'daily_ngondro', name:'金刚萨埵百字明', type:'加行', customType:'', mantraText:'', deityOrPractice:'北伏藏加行', teacher:'', lineage:'宁玛', customLineage:'', defaultCount:21, targetCount:100000, manualBaseCount:0, startDate:'', completedDate:'', status:'进行中', isDaily:true, notes:'', sortOrder:2, createdAt:nowIso(), updatedAt:nowIso() }
-      ],
-      dailyCounts: [
-        { id: uid('cnt'), practiceItemId:'daily_tara', date:todayStr(), count:108, notes:'示例', createdAt:nowIso(), updatedAt:nowIso() }
-      ],
-      resources: [
-        { id: uid('res'), title:'山净烟供官方资源', type:'官网', customType:'', url:'', relatedPracticeName:'山净烟供', relatedRecordId:'', relatedDailyPracticeId:'', requiresTransmission:'不确定', privacy:'公开', notes:'示例：可放 Yeshe Khorlo 官方链接或 YouTube 链接。', createdAt:nowIso(), updatedAt:nowIso() }
-      ],
+      records: [],
+      dailyItems: [],
+      dailyCounts: [],
+      resources: [],
       typeSettings: defaultTypes.map((t,i)=>({ id: uid('typ'), name:t.name, color:t.color, isDefault:true, isHidden:false, sortOrder:i+1, createdAt:nowIso(), updatedAt:nowIso() })),
       settings: {...defaultSettings}
     });
@@ -619,7 +606,7 @@
         <div class="card"><div class="section-title" style="margin-top:0">CSV</div><div class="row wrap"><button class="btn" data-export-csv="records">导出受法记录 CSV</button><button class="btn" data-import-records-csv>导入受法记录 CSV</button><button class="btn" data-export-csv="dailyItems">导出日课项目 CSV</button><button class="btn" data-export-csv="dailyCounts">导出日课计数 CSV</button><button class="btn" data-export-csv="resources">导出法本链接 CSV</button></div></div>
         <div class="card"><div class="section-title" style="margin-top:0">类型与颜色</div><div id="typeSettingsList">${state.typeSettings.sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).map(t=>typeSettingRow(t)).join('')}</div><button class="btn primary" data-add-type>＋ 添加类型</button></div>
         <div class="card"><div class="section-title" style="margin-top:0">默认设置</div><div class="grid2"><div><label>默认地点</label><input id="setDefaultLocation" value="${esc(state.settings.defaultLocation)}"></div><div><label>默认传承</label><input id="setDefaultLineage" value="${esc(state.settings.defaultLineage)}"></div></div><div class="grid2"><div><label>默认隐私级别</label><select id="setDefaultPrivacy">${['普通','私密','不确定'].map(x=>`<option ${state.settings.defaultPrivacy===x?'selected':''}>${x}</option>`).join('')}</select></div><div><label>默认每日遍数</label><input id="setDefaultDailyCount" type="number" value="${esc(state.settings.defaultDailyCount)}"></div></div><label>日历每周开始日</label><select id="setWeekStart"><option ${state.settings.calendarWeekStart==='周一'?'selected':''}>周一</option><option ${state.settings.calendarWeekStart==='周日'?'selected':''}>周日</option></select><button class="btn primary" data-save-settings>保存默认设置</button></div>
-        <div class="card"><div class="section-title" style="margin-top:0">数据管理</div><div class="row wrap"><button class="btn danger" data-clear-all>清空全部数据</button><button class="btn" data-reset-sample>恢复示例数据</button></div></div>
+        <div class="card"><div class="section-title" style="margin-top:0">数据管理</div><div class="row wrap"><button class="btn danger" data-clear-all>清空全部数据</button><button class="btn" data-reset-sample>重置为空白数据</button></div></div>
         <div class="card"><div class="section-title" style="margin-top:0">关于</div><p class="muted small">本 App 数据保存在当前浏览器本地，不会上传服务器。更换手机、清理浏览器缓存或更换网址前，请先导出 JSON 备份。</p><p class="muted small">版本：MVP 2.0 · PWA 本地版</p></div>
       `;
       root.onclick=e=>{
@@ -632,7 +619,7 @@
         const hide=e.target.closest('[data-hide-type]'); if(hide){ const t=state.typeSettings.find(x=>x.id===hide.dataset.hideType); if(t){t.isHidden=!t.isHidden;t.updatedAt=nowIso(); save(); render();}}
         if(e.target.closest('[data-save-settings]')) saveAppSettings();
         if(e.target.closest('[data-clear-all]')) clearAll();
-        if(e.target.closest('[data-reset-sample]')){ if(confirm('恢复示例数据会覆盖当前数据。建议先导出备份。确定继续？')){ state=defaultState(); save(); render(); }}
+        if(e.target.closest('[data-reset-sample]')){ if(confirm('重置为空白数据会清空当前数据。建议先导出备份。确定继续？')){ state={...defaultState(), records:[], dailyItems:[], dailyCounts:[], resources:[]}; save(); render(); }}
       };
     }
     function typeSettingRow(t){ return `<div class="list-card"><span class="color-swatch" style="background:${esc(t.color)}"></span><div class="grow"><h3>${esc(t.name)}</h3><div class="meta">${t.isDefault?'默认类型':'自定义类型'}${t.isHidden?' ｜ 已隐藏':''}</div></div><button class="btn smallbtn" data-edit-type="${esc(t.id)}">编辑</button><button class="btn smallbtn" data-hide-type="${esc(t.id)}">${t.isHidden?'显示':'隐藏'}</button></div>`; }
