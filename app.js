@@ -145,8 +145,8 @@
         const d = new Date(start); d.setDate(start.getDate()+i);
         const ds = toDateStr(d);
         const items = getItems(ds) || [];
-        const dots = opts.daily ? (items.length ? `<span class="day-count" style="color:${esc(opts.dailyColor||'var(--muted)')}">${items.reduce((a,x)=>a+Number(x.count||0),0)}</span>` : '') : items.slice(0,4).map(it=>`<span class="dot" style="background:${esc(recordColor(it))}"></span>`).join('');
-        const more = !opts.daily && items.length > 4 ? `<span class="tiny muted">+${items.length-4}</span>` : '';
+        const dots = opts.daily ? (items.length ? `<span class="day-count" style="color:${esc(opts.dailyColor||'var(--muted)')}">${items.reduce((a,x)=>a+Number(x.count||0),0)}</span>` : '') : items.slice(0,3).map(it=>`<span class="dot" style="background:${esc(recordColor(it))}"></span>`).join('');
+        const more = !opts.daily && items.length > 3 ? `<span class="tiny muted">${items.length}条</span>` : '';
         const el = document.createElement('button');
         el.type='button';
         el.className = `day ${d.getMonth()!==baseMonth.getMonth()?'out':''} ${ds===todayStr()?'today':''} ${ds===selected?'selected':''}`;
@@ -158,7 +158,7 @@
     function renderSelectedRecords(){
       const box = $('#selectedRecords');
       const records = state.records.filter(r=>r.date===selectedDate).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-      box.innerHTML = `<div class="section-title">${fmtDate(selectedDate)}</div>` + (records.length ? records.map(recordCard).join('') : `<div class="card empty">暂无受法记录<br><button class="btn primary" data-act="addRecordDate" data-date="${selectedDate}">为这一天添加记录</button></div>`);
+      box.innerHTML = `<div class="section-title">${fmtDate(selectedDate)}${records.length ? ` · ${records.length} 条记录` : ''}</div><div class="row wrap" style="margin-bottom:10px"><button class="btn primary smallbtn" data-act="addRecordDate" data-date="${selectedDate}">＋ 为这一天添加记录</button></div>` + (records.length ? records.map(recordCard).join('') : `<div class="card empty">暂无受法记录</div>`);
       box.onclick = (e) => {
         const card = e.target.closest('[data-record-id]');
         if (card) showRecordDetail(card.dataset.recordId);
@@ -180,12 +180,12 @@
     }
 
     function showDateDetail(date){
-      const records = state.records.filter(r=>r.date===date);
+      const records = state.records.filter(r=>r.date===date).sort((a,b)=>(a.time||'').localeCompare(b.time||'') || (a.createdAt||'').localeCompare(b.createdAt||''));
       openModal(`
         <div class="modal-head"><div class="modal-title">${esc(fmtDate(date))}</div><button class="icon-btn" data-close>×</button></div>
         <div class="modal-body">
           <button class="btn primary" data-add-date="${esc(date)}">＋ 新增此日记录</button>
-          <div class="section-title">当日记录</div>
+          <div class="section-title">当日记录${records.length ? ` · ${records.length} 条` : ''}</div>
           ${records.length ? records.map(recordCard).join('') : '<div class="empty">暂无记录</div>'}
         </div>
       `, (root)=>{
