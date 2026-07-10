@@ -1,5 +1,5 @@
-const CACHE_NAME = 'dharma-records-app-v9';
-const ASSETS = ['./', './index.html?v=9', './manifest.json?v=9', './om-apple-touch-icon.png', './apple-touch-icon.png', './favicon-192.png', './icon.png'];
+const CACHE_NAME = 'dharma-records-app-v10';
+const ASSETS = ['./', './index.html?v=10', './manifest.json?v=10', './om-apple-touch-icon.png', './apple-touch-icon.png', './favicon-192.png', './icon.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
