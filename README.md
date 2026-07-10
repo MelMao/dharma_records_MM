@@ -25,3 +25,11 @@
 
 ## Icon cache fix
 This build includes root-level `apple-touch-icon.png`, `om-apple-touch-icon.png`, `favicon-192.png`, and `icon.png` for iOS home screen icon detection.
+
+## 更新 v2.2
+
+- 功课项目新增「功课颜色」。
+- 功课列表卡片使用左侧竖线显示颜色。
+- 功课详情页、进度条、功课日历计数使用对应颜色。
+- 绿度母相关功课默认推断为绿色，作明佛母/红度母相关功课默认推断为红色。
+- 子功课默认带入父级颜色，也可以单独修改。
