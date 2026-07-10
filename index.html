@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="灌顶功课" />
-  <link rel="manifest" href="manifest.json?v=14" />
+  <link rel="manifest" href="manifest.json?v=15" />
   <link rel="apple-touch-icon" sizes="180x180" href="./om-apple-touch-icon.png" />
   <link rel="apple-touch-icon-precomposed" sizes="180x180" href="./om-apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="./favicon-192.png" />
@@ -101,7 +101,11 @@
     .day-count { font-size: 10px; color: var(--muted); }
 
     .list-card { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); background: #fff; border-radius: 16px; padding: 12px; margin: 9px 0; }
+    .list-card.dragging { opacity: .72; box-shadow: 0 18px 42px rgba(64,42,22,.22); }
     .list-card .bar { width: 5px; align-self: stretch; border-radius: 999px; background: var(--brand-2); flex: 0 0 auto; }
+    .drag-handle { flex: 0 0 auto; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 12px; background: #fffaf2; color: var(--muted); display: grid; place-items: center; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+    .drag-handle:active { cursor: grabbing; background: var(--panel-2); }
+    .daily-sort-zone { min-height: 8px; }
     .list-card h3 { margin: 0 0 4px; font-size: 15px; }
     .meta { color: var(--muted); font-size: 12px; line-height: 1.45; }
     .empty { text-align: center; color: var(--muted); padding: 28px 12px; }
@@ -521,12 +525,15 @@
       if(selectedDailyId && getDaily(selectedDailyId)) { renderDailyDetail(root, selectedDailyId); return; }
       const fixed = top.filter(i=>!!i.isDaily);
       const other = top.filter(i=>!i.isDaily);
-      const sectionHtml = (title, items, opts={}) => `
+      const sectionHtml = (title, items, zone, opts={}) => `
         <div class="section-title">${title}</div>
-        ${items.length ? items.map(item=>dailyCard(item, opts)).join('') : `<div class="card empty">暂无${title}</div>`}
+        ${items.length ? `<div class="daily-sort-zone" data-sort-zone="${zone}">${items.map(item=>dailyCard(item, opts)).join('')}</div>` : `<div class="card empty">暂无${title}</div>`}
       `;
-      root.innerHTML=`<div class="row between"><div class="muted small">固定功课会显示今日/本周记录状态；其他功课只做普通计数。</div></div><div class="row wrap" style="margin:10px 0"><button class="btn primary" data-add-independent>＋ 新建独立功课</button><button class="btn" data-add-group>＋ 新建功课组</button></div><div id="dailyList">${sectionHtml('固定功课', fixed, {showReminder:true})}${sectionHtml('其他功课', other, {showReminder:false})}</div>`;
+      root.innerHTML=`<div class="row between"><div class="muted small">固定功课会显示今日/本周记录状态；其他功课只做普通计数。长按卡片左侧的排序按钮可以拖动调整顺序。</div></div><div class="row wrap" style="margin:10px 0"><button class="btn primary" data-add-independent>＋ 新建独立功课</button><button class="btn" data-add-group>＋ 新建功课组</button></div><div id="dailyList">${sectionHtml('固定功课', fixed, 'fixed', {showReminder:true})}${sectionHtml('其他功课', other, 'other', {showReminder:false})}</div>`;
+      enableDailySort(root);
       root.onclick=e=>{
+        if(dailySortSuppressClick){ e.preventDefault(); e.stopPropagation(); return; }
+        if(e.target.closest('[data-drag-handle]')) return;
         if(e.target.closest('[data-add-independent]')) openDailyForm({itemKind:'independent'});
         if(e.target.closest('[data-add-group]')) openDailyForm({itemKind:'group', type:'加行'});
         const card=e.target.closest('[data-daily-id]'); if(card){ selectedDailyId=card.dataset.dailyId; render(); }
@@ -560,25 +567,28 @@
       const reminderHtml = reminder ? `<div style="margin-top:8px">${dailyStatusBadge(reminder.label, reminder.cls)}</div>` : '';
       if(kind==='group'){
         const target=Number(item.targetCount||0);
-        return `<div class="list-card" data-daily-id="${esc(item.id)}"><div class="bar" style="background:${esc(color)}"></div><div class="grow"><div class="row between"><h3>${esc(item.name)}</h3>${reminder?dailyStatusBadge(reminder.label, reminder.cls):''}</div><div class="meta">功课组｜${kids.length} 个分项功课${target?`｜默认分项目标：${target} 遍`:''}</div><div class="meta">${kids.length?kids.map(k=>k.name).join(' / '):'暂无分项功课'}</div></div></div>`;
+        return `<div class="list-card" data-daily-id="${esc(item.id)}"><div class="bar" style="background:${esc(color)}"></div><button class="drag-handle" data-drag-handle type="button" aria-label="拖动排序">☰</button><div class="grow"><div class="row between"><h3>${esc(item.name)}</h3>${reminder?dailyStatusBadge(reminder.label, reminder.cls):''}</div><div class="meta">功课组｜${kids.length} 个分项功课${target?`｜默认分项目标：${target} 遍`:''}</div><div class="meta">${kids.length?kids.map(k=>k.name).join(' / '):'暂无分项功课'}</div></div></div>`;
       }
       const total=totalForDaily(item.id); const target=Number(item.targetCount||0); const goal=periodGoalText(item);
-      return `<div class="list-card" data-daily-id="${esc(item.id)}"><div class="bar" style="background:${esc(color)}"></div><div class="grow"><div class="row between"><h3>${esc(item.name)}</h3>${reminder?dailyStatusBadge(reminder.label, reminder.cls):''}</div><div class="meta">${dailyKindLabel(item)}${item.parentId?`｜所属：${esc(getDaily(item.parentId)?.name||'')}`:''}${item.status?`｜${esc(item.status)}`:''}</div>${item.mantraText?`<div class="meta">${esc(item.mantraText)}</div>`:''}<div class="meta">今日：${todayTotalForDaily(item.id)} 遍 ｜ 本周：${weekTotalForDaily(item.id)} 遍 ｜ 本月：${monthTotalForDaily(item.id)} 遍</div>${goal?`<div class="meta">${esc(goal)}</div><div class="progress"><div style="width:${periodGoalPct(item)}%;background:${esc(color)}"></div></div>`:''}<div class="meta">累计：${total}${target?` / ${target}`:''} 遍</div>${target?`<div class="progress"><div style="width:${pct(item)}%;background:${esc(color)}"></div></div>`:''}${(!reminder && reminderHtml)?reminderHtml:''}</div></div>`;
+      return `<div class="list-card" data-daily-id="${esc(item.id)}"><div class="bar" style="background:${esc(color)}"></div><button class="drag-handle" data-drag-handle type="button" aria-label="拖动排序">☰</button><div class="grow"><div class="row between"><h3>${esc(item.name)}</h3>${reminder?dailyStatusBadge(reminder.label, reminder.cls):''}</div><div class="meta">${dailyKindLabel(item)}${item.parentId?`｜所属：${esc(getDaily(item.parentId)?.name||'')}`:''}${item.status?`｜${esc(item.status)}`:''}</div>${item.mantraText?`<div class="meta">${esc(item.mantraText)}</div>`:''}<div class="meta">今日：${todayTotalForDaily(item.id)} 遍 ｜ 本周：${weekTotalForDaily(item.id)} 遍 ｜ 本月：${monthTotalForDaily(item.id)} 遍</div>${goal?`<div class="meta">${esc(goal)}</div><div class="progress"><div style="width:${periodGoalPct(item)}%;background:${esc(color)}"></div></div>`:''}<div class="meta">累计：${total}${target?` / ${target}`:''} 遍</div>${target?`<div class="progress"><div style="width:${pct(item)}%;background:${esc(color)}"></div></div>`:''}${(!reminder && reminderHtml)?reminderHtml:''}</div></div>`;
     }
     function renderDailyDetail(root,id){
       const item=getDaily(id); const kids=childrenOf(id); const kind=dailyKind(item);
       const title = item.name;
       if(kind==='group'){
         const target=Number(item.targetCount||0);
-        root.innerHTML=`<button class="btn smallbtn" data-back-daily>‹ 返回功课</button><div class="card" style="border-left:5px solid ${esc(dailyColor(item))}"><h2 style="margin:0 0 6px">${esc(title)}</h2><div class="meta">功课组 ${item.type?`｜ ${esc(item.type)}`:''}${item.status?`｜ ${esc(item.status)}`:''}</div>${target?`<div class="meta">默认分项目标：${target} 遍</div>`:''}${item.notes?`<p>${esc(item.notes)}</p>`:''}<div class="row wrap"><button class="btn primary" data-add-child="${esc(id)}">＋ 添加分项功课</button><button class="btn" data-edit-daily="${esc(id)}">编辑功课组</button><button class="btn danger" data-delete-daily="${esc(id)}">删除功课组</button></div></div><div class="section-title">分项功课</div>${kids.length?kids.map(dailyCard).join(''):'<div class="card empty">暂无分项功课<br><button class="btn primary" data-add-child="${esc(id)}">添加第一个分项功课</button></div>'}<div class="section-title">汇总日历</div>${dailySummaryCalendar(kids)}${linkedResourcesBlock('', id)}`;
+        root.innerHTML=`<button class="btn smallbtn" data-back-daily>‹ 返回功课</button><div class="card" style="border-left:5px solid ${esc(dailyColor(item))}"><h2 style="margin:0 0 6px">${esc(title)}</h2><div class="meta">功课组 ${item.type?`｜ ${esc(item.type)}`:''}${item.status?`｜ ${esc(item.status)}`:''}</div>${target?`<div class="meta">默认分项目标：${target} 遍</div>`:''}${item.notes?`<p>${esc(item.notes)}</p>`:''}<div class="row wrap"><button class="btn primary" data-add-child="${esc(id)}">＋ 添加分项功课</button><button class="btn" data-edit-daily="${esc(id)}">编辑功课组</button><button class="btn danger" data-delete-daily="${esc(id)}">删除功课组</button></div></div><div class="section-title">分项功课</div>${kids.length?`<div class="daily-sort-zone" data-sort-zone="children" data-parent-id="${esc(id)}">${kids.map(dailyCard).join('')}</div>`:'<div class="card empty">暂无分项功课<br><button class="btn primary" data-add-child="${esc(id)}">添加第一个分项功课</button></div>'}<div class="section-title">汇总日历</div>${dailySummaryCalendar(kids)}${linkedResourcesBlock('', id)}`;
       } else {
         const total=totalForDaily(id), target=Number(item.targetCount||0); const goal=periodGoalText(item);
         root.innerHTML=`<button class="btn smallbtn" data-back-daily>‹ 返回功课</button><div class="card" style="border-left:5px solid ${esc(dailyColor(item))}"><h2 style="margin:0 0 6px">${esc(title)}</h2><div class="meta">${dailyKindLabel(item)}${item.parentId?`｜所属功课组：${esc(getDaily(item.parentId)?.name||'')}`:''}${item.status?`｜ ${esc(item.status)}`:''}</div>${item.mantraText?`<div class="soft">${esc(item.mantraText)}</div>`:''}<div class="meta" style="margin-top:8px">今日：${todayTotalForDaily(id)} 遍 ｜ 本周：${weekTotalForDaily(id)} 遍 ｜ 本月：${monthTotalForDaily(id)} 遍</div>${goal?`<div class="meta">${esc(goal)}</div><div class="progress"><div style="width:${periodGoalPct(item)}%;background:${esc(dailyColor(item))}"></div></div>`:''}<div class="meta">累计：${total}${target?` / ${target}`:''} 遍</div>${target?`<div class="progress"><div style="width:${pct(item)}%;background:${esc(dailyColor(item))}"></div></div>`:''}<div class="row wrap" style="margin-top:12px"><button class="btn primary" data-count-today="${esc(id)}">记录今天</button><button class="btn" data-add-count="${esc(id)}">补录日期</button><button class="btn" data-edit-daily="${esc(id)}">编辑功课</button><button class="btn danger" data-delete-daily="${esc(id)}">删除</button></div></div><div class="month-head"><button class="icon-btn" data-daily-prev>‹</button><button class="month-title pickable" data-daily-pick-month type="button">${dailyMonth.getFullYear()}年${dailyMonth.getMonth()+1}月</button><button class="icon-btn" data-daily-next>›</button></div><div class="card"><div class="calendar" id="dailyCalendarGrid"></div></div><div id="dailySelected"></div>${linkedResourcesBlock('', id)}`;
         setTimeout(()=>renderDailyCalendarGrid(id),0);
       }
+      enableDailySort(root);
       root.onclick=e=>{
+        if(dailySortSuppressClick){ e.preventDefault(); e.stopPropagation(); return; }
+        if(e.target.closest('[data-drag-handle]')) return;
         if(e.target.closest('[data-back-daily]')){ selectedDailyId=null; render(); }
-        const addChild=e.target.closest('[data-add-child]'); if(addChild){ const parent=getDaily(addChild.dataset.addChild); openDailyForm({itemKind:'sub', parentId:addChild.dataset.addChild, targetCount: parent?.targetCount || '', color: parent?.color || ''}); }
+        const addChild=e.target.closest('[data-add-child]'); if(addChild){ const parent=getDaily(addChild.dataset.addChild); openDailyForm({itemKind:'sub', parentId:addChild.dataset.addChild, targetCount: parent?.targetCount || '', color: parent?.color || '', startDate: parent?.startDate || ''}); }
         const edit=e.target.closest('[data-edit-daily]'); if(edit) openDailyForm(getDaily(edit.dataset.editDaily));
         const card=e.target.closest('[data-daily-id]'); if(card){ selectedDailyId=card.dataset.dailyId; render(); }
         const today=e.target.closest('[data-count-today]'); if(today) openCountForm(today.dataset.countToday, todayStr());
@@ -622,6 +632,7 @@
       const item={ itemKind: inferredKind, parentId:'', name:'', type: inferredKind==='group'?'加行':'心咒', customType:'', color:'', mantraText:'', deityOrPractice:'', teacher:'', lineage:'', customLineage:'', defaultCount:state.settings.defaultDailyCount||108, targetCount:'', goalPeriod:'daily', goalCount:0, manualBaseCount:0, startDate:'', completedDate:'', status:state.settings.defaultDailyPracticeStatus||'进行中', isDaily:true, notes:'', sortOrder:state.dailyItems.length+1, ...data };
       if(!isEdit && item.itemKind==='sub' && !item.targetCount && parentDefault?.targetCount) item.targetCount = parentDefault.targetCount;
       if(!isEdit && item.itemKind==='sub' && !item.color && parentDefault?.color) item.color = parentDefault.color;
+      if(!isEdit && item.itemKind==='sub' && !item.startDate && parentDefault?.startDate) item.startDate = parentDefault.startDate;
       const parents=groupOptions(item.id);
       const types=['心咒','仪轨','加行','护法','烟供','佛号','祈请文','其他'];
       const lineages=['宁玛','萨迦','噶举','格鲁','觉囊','贝玛林巴','不确定','其他'];
@@ -637,6 +648,7 @@
           $('#dailyCustomLineage',root).classList.toggle('hidden', form.lineage.value!=='其他');
         };
         toggle(); form.itemKind.onchange=toggle; form.type.onchange=toggle; form.lineage.onchange=toggle;
+        if(form.parentId){ form.parentId.onchange=()=>{ const parent=getDaily(form.parentId.value); if(!parent) return; if(!form.startDate.value && parent.startDate) form.startDate.value=parent.startDate; if(!form.targetCount.value && parent.targetCount) form.targetCount.value=parent.targetCount; if(parent.color) form.color.value=parent.color; }; }
         root.addEventListener('click', e=>{if(e.target.closest('[data-close]')) closeModal();});
         form.onsubmit=e=>{e.preventDefault(); const fd=new FormData(form); const kind=fd.get('itemKind')||'independent'; const parentId=kind==='sub'?fd.get('parentId'):''; if(kind==='sub' && !parentId){ alert('请选择所属功课组'); return; } const obj={...item,id:isEdit?item.id:uid('daily'), itemKind:kind, parentId, name:norm(fd.get('name')), type:norm(fd.get('type')), customType:fd.get('type')==='其他'?norm(fd.get('customType')):'', color:fd.get('color')||'', mantraText:norm(fd.get('mantraText')), deityOrPractice:norm(fd.get('deityOrPractice')), teacher:norm(fd.get('teacher')), lineage:norm(fd.get('lineage')), customLineage:fd.get('lineage')==='其他'?norm(fd.get('customLineage')):'', defaultCount:kind==='group'?0:Number(fd.get('defaultCount')||0), targetCount:kind==='group'?Number(fd.get('groupTargetCount')||0):Number(fd.get('targetCount')||0), goalPeriod:kind==='group'?'daily':(fd.get('goalPeriod')||'daily'), goalCount:kind==='group'?0:Number(fd.get('goalCount')||0), manualBaseCount:kind==='group'?0:Number(fd.get('manualBaseCount')||0), startDate:fd.get('startDate'), completedDate:fd.get('completedDate'), status:norm(fd.get('status')), isDaily:!!fd.get('isDaily'), notes:norm(fd.get('notes')), updatedAt:nowIso(), createdAt:item.createdAt||nowIso()}; if(isEdit) state.dailyItems=state.dailyItems.map(x=>x.id===obj.id?obj:x); else state.dailyItems.push(obj); save(); closeModal(); selectedDailyId=obj.parentId||obj.id; render();};
       });
@@ -653,6 +665,44 @@
       if(childrenOf(id).length) return alert('请先删除或移动子功课。');
       if(!confirm(`确定删除「${item.name}」吗？相关计数也会删除。`)) return;
       state.dailyItems=state.dailyItems.filter(x=>x.id!==id); state.dailyCounts=state.dailyCounts.filter(x=>x.practiceItemId!==id); state.resources=state.resources.map(x=>x.relatedDailyPracticeId===id?{...x,relatedDailyPracticeId:''}:x); save(); selectedDailyId=null; render();
+    }
+    function enableDailySort(container){
+      $$('.daily-sort-zone', container).forEach(zone=>{
+        zone.addEventListener('pointerdown', e=>{
+          const handle=e.target.closest('[data-drag-handle]');
+          if(!handle) return;
+          const card=handle.closest('[data-daily-id]');
+          if(!card || !zone.contains(card)) return;
+          e.preventDefault(); e.stopPropagation();
+          card.classList.add('dragging');
+          let moved=false;
+          const onMove=ev=>{
+            ev.preventDefault();
+            moved=true;
+            const after=getDragAfterElement(zone, ev.clientY, card);
+            if(after==null) zone.appendChild(card); else zone.insertBefore(card, after);
+          };
+          const onUp=()=>{
+            document.removeEventListener('pointermove', onMove);
+            card.classList.remove('dragging');
+            const ids=$$('[data-daily-id]', zone).map(el=>el.dataset.dailyId);
+            ids.forEach((id,idx)=>{ const item=getDaily(id); if(item){ item.sortOrder=idx+1; item.updatedAt=nowIso(); } });
+            if(ids.length) save();
+            if(moved){ dailySortSuppressClick=true; setTimeout(()=>dailySortSuppressClick=false,250); }
+          };
+          document.addEventListener('pointermove', onMove, {passive:false});
+          document.addEventListener('pointerup', onUp, {once:true});
+          document.addEventListener('pointercancel', onUp, {once:true});
+        });
+      });
+    }
+    function getDragAfterElement(zone, y, dragging){
+      return $$('[data-daily-id]', zone).filter(el=>el!==dragging).reduce((closest, child)=>{
+        const box=child.getBoundingClientRect();
+        const offset=y - box.top - box.height/2;
+        if(offset < 0 && offset > closest.offset) return {offset, element:child};
+        return closest;
+      }, {offset:-Infinity, element:null}).element;
     }
     function linkedResourcesBlock(recordId='', dailyId=''){
       const linked=state.resources.filter(r=>(recordId && r.relatedRecordId===recordId) || (dailyId && r.relatedDailyPracticeId===dailyId));
@@ -684,7 +734,7 @@
         <div class="card"><div class="section-title" style="margin-top:0">类型与颜色</div><div id="typeSettingsList">${state.typeSettings.sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).map(t=>typeSettingRow(t)).join('')}</div><button class="btn primary" data-add-type>＋ 添加类型</button></div>
         <div class="card"><div class="section-title" style="margin-top:0">默认设置</div><div class="grid2"><div><label>默认地点</label><input id="setDefaultLocation" value="${esc(state.settings.defaultLocation)}"></div><div><label>默认传承</label><input id="setDefaultLineage" value="${esc(state.settings.defaultLineage)}"></div></div><div class="grid2"><div><label>默认隐私级别</label><select id="setDefaultPrivacy">${['普通','私密','不确定'].map(x=>`<option ${state.settings.defaultPrivacy===x?'selected':''}>${x}</option>`).join('')}</select></div><div><label>默认记录遍数</label><input id="setDefaultDailyCount" type="number" value="${esc(state.settings.defaultDailyCount)}"></div></div><label>日历每周开始日</label><select id="setWeekStart"><option ${state.settings.calendarWeekStart==='周一'?'selected':''}>周一</option><option ${state.settings.calendarWeekStart==='周日'?'selected':''}>周日</option></select><button class="btn primary" data-save-settings>保存默认设置</button></div>
         <div class="card"><div class="section-title" style="margin-top:0">数据管理</div><div class="row wrap"><button class="btn danger" data-clear-all>清空全部数据</button><button class="btn" data-reset-sample>重置为空白数据</button></div></div>
-        <div class="card"><div class="section-title" style="margin-top:0">关于</div><p class="muted small">本 App 数据保存在当前浏览器本地，不会上传服务器。更换手机、清理浏览器缓存或更换网址前，请先导出 JSON 备份。</p><p class="muted small">版本：MVP 2.3 · PWA 本地版</p></div>
+        <div class="card"><div class="section-title" style="margin-top:0">关于</div><p class="muted small">本 App 数据保存在当前浏览器本地，不会上传服务器。更换手机、清理浏览器缓存或更换网址前，请先导出 JSON 备份。</p><p class="muted small">版本：MVP 2.5 · PWA 本地版</p></div>
       `;
       root.onclick=e=>{
         if(e.target.closest('[data-export-json]')) exportJson();
