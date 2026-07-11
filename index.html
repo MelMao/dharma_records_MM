@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="灌顶功课" />
-  <link rel="manifest" href="manifest.json?v=15" />
+  <link rel="manifest" href="manifest.json?v=18" />
   <link rel="apple-touch-icon" sizes="180x180" href="./om-apple-touch-icon.png" />
   <link rel="apple-touch-icon-precomposed" sizes="180x180" href="./om-apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="./favicon-192.png" />
@@ -588,7 +588,7 @@
       root.onclick=e=>{
         if(dailySortSuppressClick){ e.preventDefault(); e.stopPropagation(); return; }
         if(e.target.closest('[data-drag-handle]')) return;
-        if(e.target.closest('[data-back-daily]')){ selectedDailyId=null; render(); }
+        if(e.target.closest('[data-back-daily]')){ selectedDailyId = (item && item.parentId && getDaily(item.parentId)) ? item.parentId : null; render(); }
         const addChild=e.target.closest('[data-add-child]'); if(addChild){ const parent=getDaily(addChild.dataset.addChild); openDailyForm({itemKind:'sub', parentId:addChild.dataset.addChild, targetCount: parent?.targetCount || '', color: parent?.color || '', startDate: parent?.startDate || ''}); }
         const edit=e.target.closest('[data-edit-daily]'); if(edit) openDailyForm(getDaily(edit.dataset.editDaily));
         const card=e.target.closest('[data-daily-id]'); if(card){ selectedDailyId=card.dataset.dailyId; render(); }

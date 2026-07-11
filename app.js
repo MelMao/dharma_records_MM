@@ -412,7 +412,7 @@
       root.onclick=e=>{
         if(dailySortSuppressClick){ e.preventDefault(); e.stopPropagation(); return; }
         if(e.target.closest('[data-drag-handle]')) return;
-        if(e.target.closest('[data-back-daily]')){ selectedDailyId=null; render(); }
+        if(e.target.closest('[data-back-daily]')){ selectedDailyId = (item && item.parentId && getDaily(item.parentId)) ? item.parentId : null; render(); }
         const addChild=e.target.closest('[data-add-child]'); if(addChild){ const parent=getDaily(addChild.dataset.addChild); openDailyForm({itemKind:'sub', parentId:addChild.dataset.addChild, targetCount: parent?.targetCount || '', color: parent?.color || '', startDate: parent?.startDate || ''}); }
         const edit=e.target.closest('[data-edit-daily]'); if(edit) openDailyForm(getDaily(edit.dataset.editDaily));
         const card=e.target.closest('[data-daily-id]'); if(card){ selectedDailyId=card.dataset.dailyId; render(); }
